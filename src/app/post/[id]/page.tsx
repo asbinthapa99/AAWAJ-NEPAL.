@@ -11,7 +11,6 @@ import ReportDialog from '@/components/ReportDialog';
 import {
   Clock,
   MapPin,
-  Volume2,
   Share2,
   Flag,
   ArrowLeft,
@@ -20,6 +19,7 @@ import {
   Play,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/components/AuthProvider';
 
 function timeAgo(date: string): string {
@@ -221,11 +221,13 @@ export default function PostDetailPage({
 
           {/* Image */}
           {post.image_url && (
-            <div className="mt-4 rounded-xl overflow-hidden">
-              <img
+            <div className="mt-4 rounded-xl overflow-hidden max-h-96">
+              <Image
                 src={post.image_url}
                 alt={post.title}
-                className="w-full max-h-96 object-cover"
+                width={800}
+                height={384}
+                className="w-full object-cover"
               />
             </div>
           )}

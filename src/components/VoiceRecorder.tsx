@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, Pause, Trash2, Loader2 } from 'lucide-react';
+import { Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 
 interface VoiceRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
@@ -15,7 +15,6 @@ export default function VoiceRecorder({
   onRemove,
 }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(existingUrl || null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -49,7 +48,6 @@ export default function VoiceRecorder({
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(blob);
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
         onRecordingComplete(blob);
@@ -96,7 +94,6 @@ export default function VoiceRecorder({
 
   const removeRecording = () => {
     if (audioUrl && !existingUrl) URL.revokeObjectURL(audioUrl);
-    setAudioBlob(null);
     setAudioUrl(null);
     setDuration(0);
     setCurrentTime(0);

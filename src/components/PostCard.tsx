@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
@@ -102,11 +103,12 @@ export default function PostCard({ post }: PostCardProps) {
 
         {/* Image */}
         {post.image_url && (
-          <div className="mt-3 rounded-xl overflow-hidden">
-            <img
+          <div className="mt-3 rounded-xl overflow-hidden relative h-48">
+            <Image
               src={post.image_url}
               alt={post.title}
-              className="w-full h-48 object-cover"
+              fill
+              className="object-cover"
             />
           </div>
         )}
