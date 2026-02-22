@@ -1,0 +1,306 @@
+'use client';
+
+import { useState, useEffect, use } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Profile, Post } from '@/lib/types';
+import { useAuth } from '@/components/AuthProvider';
+import PostCard from '@/components/PostCard';
+import {
+  MapPin,
+  Calendar,
+  Loader2,
+  Settings,
+  Megaphone,
+  ArrowLeft,
+  Save,
+  X,
+} from 'lucide-react';
+import Link from 'next/link';
+import { districts } from '@/lib/categories';
+
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+export default function ProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { user, refreshProfile } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Edit form state
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editDistrict, setEditDistrict] = useState('');
+
+  const supabase = createClient();
+  const isOwnProfile = user?.id === id;
+
+  useEffect(() => {
+    fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const fetchProfile = async () => {
+    // Fetch profile
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    setProfile(profileData);
+
+    if (profileData) {
+      setEditName(profileData.full_name);
+      setEditBio(profileData.bio || '');
+      setEditDistrict(profileData.district || '');
+    }
+
+    // Fetch user's posts
+    const { data: postsData } = await supabase
+      .from('posts')
+      .select('*, author:profiles(*)')
+      .eq('author_id', id)
+      .order('created_at', { ascending: false });
+
+    setPosts(postsData || []);
+    setLoading(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user || !isOwnProfile) return;
+
+    setSaving(true);
+
+    await supabase
+      .from('profiles')
+      .update({
+        full_name: editName.trim(),
+        bio: editBio.trim() || null,
+        district: editDistrict || null,
+      })
+      .eq('id', user.id);
+
+    await refreshProfile();
+    await fetchProfile();
+    setEditing(false);
+    setSaving(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          User not found
+        </h2>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-semibold"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Feed
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Profile Card */}
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm mb-6">
+        {/* Cover gradient */}
+        <div className="h-32 bg-gradient-to-r from-red-500 via-purple-500 to-blue-600" />
+
+        <div className="px-6 pb-6">
+          {/* Avatar */}
+          <div className="-mt-12 mb-4 flex items-end justify-between">
+            <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold border-4 border-white dark:border-gray-900 shadow-lg">
+              {profile.full_name[0]?.toUpperCase() || 'U'}
+            </div>
+
+            {isOwnProfile && !editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Settings className="w-4 h-4" />
+                Edit Profile
+              </button>
+            )}
+          </div>
+
+          {editing ? (
+            /* Edit Form */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none text-gray-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Bio
+                </label>
+                <textarea
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  rows={3}
+                  placeholder="Tell us about yourself..."
+                  className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none text-gray-900 dark:text-white resize-none placeholder-gray-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  District
+                </label>
+                <select
+                  value={editDistrict}
+                  onChange={(e) => setEditDistrict(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none text-gray-900 dark:text-white appearance-none"
+                >
+                  <option value="">Select district</option>
+                  {districts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditing(false)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveProfile}
+                  disabled={saving || !editName.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Profile Info */
+            <div>
+              <h1 className="text-xl font-extrabold text-gray-900 dark:text-white">
+                {profile.full_name}
+              </h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                @{profile.username}
+              </p>
+
+              {profile.bio && (
+                <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                  {profile.bio}
+                </p>
+              )}
+
+              <div className="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
+                {profile.district && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {profile.district}
+                  </span>
+                )}
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Joined {formatDate(profile.created_at)}
+                </span>
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-6 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {posts.length}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Voices Raised
+                  </p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {posts.reduce((sum, p) => sum + p.supports_count, 0)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Total Supports
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* User's Posts */}
+      <div className="mb-4">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Megaphone className="w-5 h-5" />
+          Voices Raised ({posts.length})
+        </h2>
+      </div>
+
+      {posts.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
+          <Megaphone className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {isOwnProfile
+              ? "You haven't raised any voice yet."
+              : 'This user hasn\'t posted anything yet.'}
+          </p>
+          {isOwnProfile && (
+            <Link
+              href="/post/create"
+              className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              Raise Your First Voice
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
