@@ -19,6 +19,7 @@ import {
   Tag,
 } from 'lucide-react';
 import Link from 'next/link';
+import NextImage from 'next/image';
 
 export default function CreatePostPage() {
   const { user, profile } = useAuth();
@@ -276,11 +277,13 @@ export default function CreatePostPage() {
             📸 Attach Image (Optional)
           </label>
           {imagePreview ? (
-            <div className="relative rounded-xl overflow-hidden">
-              <img
+            <div className="relative rounded-xl overflow-hidden h-48">
+              <NextImage
                 src={imagePreview}
                 alt="Preview"
-                className="w-full h-48 object-cover"
+                fill
+                unoptimized
+                className="object-cover"
               />
               <button
                 type="button"
