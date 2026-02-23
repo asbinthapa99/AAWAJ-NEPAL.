@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, Megaphone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { districts } from '@/lib/categories';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -17,12 +18,37 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef<any>(null);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Verify captcha first
+    if (!captchaToken) {
+      setError('Please complete the captcha verification');
+      return;
+    }
+
     setLoading(true);
+
+    // Verify captcha token with backend
+    const captchaVerify = await fetch('/api/verify-captcha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: captchaToken }),
+    });
+
+    const captchaResult = await captchaVerify.json();
+    if (!captchaResult.success) {
+      setError('Captcha verification failed. Please try again.');
+      setCaptchaToken('');
+      captchaRef.current?.reset();
+      setLoading(false);
+      return;
+    }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
@@ -47,6 +73,8 @@ export default function RegisterPage() {
 
     if (existingUser) {
       setError('This username is already taken. Please choose a different one.');
+      setCaptchaToken('');
+      captchaRef.current?.reset();
       setLoading(false);
       return;
     }
@@ -70,10 +98,14 @@ export default function RegisterPage() {
       } else {
         setError(error.message);
       }
+      setCaptchaToken('');
+      captchaRef.current?.reset();
       setLoading(false);
     } else if (data?.user && !data.user.identities?.length) {
       // Supabase returns a user with no identities when email already exists
       setError('An account with this email already exists. Please sign in instead.');
+      setCaptchaToken('');
+      captchaRef.current?.reset();
       setLoading(false);
     } else {
       // Send OTP code for verification
@@ -238,6 +270,13 @@ export default function RegisterPage() {
               </select>
             </div>
           </div>
+
+          <HCaptcha
+            ref={captchaRef}
+            sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '03fc2e1c-8970-4cec-bc4a-1250737e2a92'}
+            onVerify={(token) => setCaptchaToken(token.response)}
+            theme="dark"
+          />
 
           <button
             type="submit"

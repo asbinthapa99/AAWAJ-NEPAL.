@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -13,6 +14,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loadingOTP, setLoadingOTP] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef<any>(null);
   const router = useRouter();
 
   const handleLoginWithCode = async () => {
@@ -60,7 +63,30 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Verify captcha first
+    if (!captchaToken) {
+      setError('Please complete the captcha verification');
+      return;
+    }
+
     setLoading(true);
+
+    // Verify captcha token with backend
+    const captchaVerify = await fetch('/api/verify-captcha', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: captchaToken }),
+    });
+
+    const captchaResult = await captchaVerify.json();
+    if (!captchaResult.success) {
+      setError('Captcha verification failed. Please try again.');
+      setCaptchaToken('');
+      captchaRef.current?.reset();
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     let loginEmail = identifier.trim();
@@ -95,6 +121,8 @@ export default function LoginPage() {
       } else {
         setError(error.message);
       }
+      setCaptchaToken('');
+      captchaRef.current?.reset();
       setLoading(false);
     } else {
       router.push('/');
@@ -182,6 +210,13 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
+
+          <HCaptcha
+            ref={captchaRef}
+            sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '03fc2e1c-8970-4cec-bc4a-1250737e2a92'}
+            onVerify={(token) => setCaptchaToken(token.response)}
+            theme="dark"
+          />
 
           <button
             type="submit"
