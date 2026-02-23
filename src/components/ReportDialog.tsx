@@ -32,13 +32,18 @@ export default function ReportDialog({ postId, onClose }: ReportDialogProps) {
     setSubmitting(true);
     const supabase = createClient();
 
-    await supabase.from('reports').insert({
+    const { error } = await supabase.from('reports').insert({
       post_id: postId,
       reporter_id: user.id,
       reason,
     });
 
     setSubmitting(false);
+
+    if (error) {
+      return;
+    }
+
     setSubmitted(true);
 
     setTimeout(onClose, 1500);

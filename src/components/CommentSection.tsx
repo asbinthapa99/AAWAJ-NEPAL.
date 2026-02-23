@@ -67,8 +67,10 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const handleDelete = async (commentId: string) => {
-    await supabase.from('comments').delete().eq('id', commentId);
-    setComments(comments.filter((c) => c.id !== commentId));
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+    if (!error) {
+      setComments(comments.filter((c) => c.id !== commentId));
+    }
   };
 
   return (

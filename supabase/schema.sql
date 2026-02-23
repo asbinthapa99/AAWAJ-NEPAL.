@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS posts (
   author_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  category TEXT NOT NULL DEFAULT 'other',
+  category TEXT NOT NULL DEFAULT 'other' CHECK (category IN ('infrastructure','education','health','environment','governance','safety','employment','social','culture','technology','other')),
   district TEXT,
-  urgency TEXT NOT NULL DEFAULT 'medium',
+  urgency TEXT NOT NULL DEFAULT 'medium' CHECK (urgency IN ('low','medium','high','critical')),
   voice_url TEXT,
   image_url TEXT,
   supports_count INTEGER DEFAULT 0,
@@ -120,7 +120,8 @@ CREATE TABLE IF NOT EXISTS reports (
   reporter_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   reason TEXT NOT NULL,
   status TEXT DEFAULT 'pending',
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(post_id, reporter_id)
 );
 
 ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
@@ -237,5 +238,5 @@ CREATE INDEX IF NOT EXISTS idx_supports_user ON supports(user_id);
 -- ============================================================
 -- STORAGE BUCKETS (run in Supabase Dashboard > Storage)
 -- ============================================================
--- Create buckets named: 'avatars', 'voice-recordings', 'post-images'
--- Set them as public buckets for easy access
+-- Create bucket named: 'post-images'
+-- Set it as a public bucket for easy access

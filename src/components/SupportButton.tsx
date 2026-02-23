@@ -31,21 +31,23 @@ export default function SupportButton({
     const supabase = createClient();
 
     if (supported) {
-      // Remove support
-      await supabase
+      const { error } = await supabase
         .from('supports')
         .delete()
         .eq('post_id', postId)
         .eq('user_id', user.id);
-      setCount((prev) => Math.max(prev - 1, 0));
-      setSupported(false);
+      if (!error) {
+        setCount((prev) => Math.max(prev - 1, 0));
+        setSupported(false);
+      }
     } else {
-      // Add support
-      await supabase
+      const { error } = await supabase
         .from('supports')
         .insert({ post_id: postId, user_id: user.id });
-      setCount((prev) => prev + 1);
-      setSupported(true);
+      if (!error) {
+        setCount((prev) => prev + 1);
+        setSupported(true);
+      }
     }
 
     setLoading(false);

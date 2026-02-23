@@ -11,13 +11,10 @@ import ReportDialog from '@/components/ReportDialog';
 import {
   Clock,
   MapPin,
-  Volume2,
   Share2,
   Flag,
   ArrowLeft,
   Loader2,
-  Pause,
-  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
@@ -46,7 +43,6 @@ export default function PostDetailPage({
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [userSupported, setUserSupported] = useState(false);
-  const [isPlayingVoice, setIsPlayingVoice] = useState(false);
 
   const supabase = createClient();
 
@@ -108,7 +104,7 @@ export default function PostDetailPage({
   }
 
   const category = getCategoryInfo(post.category);
-  const urgency = URGENCY_CONFIG[post.urgency];
+  const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -179,45 +175,6 @@ export default function PostDetailPage({
           <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
             {post.content}
           </p>
-
-          {/* Voice Player */}
-          {post.voice_url && (
-            <div className="mt-4 flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-              <button
-                onClick={() => {
-                  const audio = document.getElementById('post-audio') as HTMLAudioElement;
-                  if (audio) {
-                    if (isPlayingVoice) {
-                      audio.pause();
-                    } else {
-                      audio.play();
-                    }
-                    setIsPlayingVoice(!isPlayingVoice);
-                  }
-                }}
-                className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 transition-colors flex-shrink-0"
-              >
-                {isPlayingVoice ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5 ml-0.5" />
-                )}
-              </button>
-              <div>
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Voice Message
-                </p>
-                <p className="text-xs text-blue-500 dark:text-blue-400">
-                  Listen to the author&apos;s voice
-                </p>
-              </div>
-              <audio
-                id="post-audio"
-                src={post.voice_url}
-                onEnded={() => setIsPlayingVoice(false)}
-              />
-            </div>
-          )}
 
           {/* Image */}
           {post.image_url && (

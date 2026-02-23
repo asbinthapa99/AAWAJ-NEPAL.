@@ -8,7 +8,6 @@ import { categories } from '@/lib/categories';
 import { districts } from '@/lib/categories';
 import { PostCategory, UrgencyLevel } from '@/lib/types';
 import { URGENCY_CONFIG } from '@/lib/constants';
-import VoiceRecorder from '@/components/VoiceRecorder';
 import {
   Megaphone,
   Loader2,
@@ -29,7 +28,6 @@ export default function CreatePostPage() {
   const [category, setCategory] = useState<PostCategory>('other');
   const [urgency, setUrgency] = useState<UrgencyLevel>('medium');
   const [district, setDistrict] = useState(profile?.district || '');
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,12 +53,26 @@ export default function CreatePostPage() {
     );
   }
 
+  const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('Only JPEG, PNG, GIF, and WebP images are allowed.');
+      return;
     }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError('Image must be under 5MB.');
+      return;
+    }
+
+    setError('');
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const removeImage = () => {
@@ -80,31 +92,24 @@ export default function CreatePostPage() {
     setError('');
 
     const supabase = createClient();
-    let voice_url: string | null = null;
     let image_url: string | null = null;
-
-    // Upload voice recording
-    if (voiceBlob) {
-      const fileName = `voice_${user.id}_${Date.now()}.webm`;
-      const { data } = await supabase.storage
-        .from('voice-recordings')
-        .upload(fileName, voiceBlob, { contentType: 'audio/webm' });
-
-      if (data) {
-        const { data: urlData } = supabase.storage
-          .from('voice-recordings')
-          .getPublicUrl(data.path);
-        voice_url = urlData.publicUrl;
-      }
-    }
 
     // Upload image
     if (imageFile) {
-      const ext = imageFile.name.split('.').pop();
+      const ext = imageFile.name.split('.').pop()?.toLowerCase();
       const fileName = `post_${user.id}_${Date.now()}.${ext}`;
-      const { data } = await supabase.storage
+      const { data, error: uploadError } = await supabase.storage
         .from('post-images')
-        .upload(fileName, imageFile);
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        setError('Image upload failed: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
 
       if (data) {
         const { data: urlData } = supabase.storage
@@ -124,7 +129,6 @@ export default function CreatePostPage() {
         category,
         urgency,
         district: district || null,
-        voice_url,
         image_url,
       })
       .select()
@@ -253,20 +257,6 @@ export default function CreatePostPage() {
             required
             rows={6}
             className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 resize-none"
-          />
-        </div>
-
-        {/* Voice Recording */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-            🎙️ Voice Message (Optional)
-          </label>
-          <p className="text-xs text-gray-400 mb-2">
-            Record a voice message to express your thoughts
-          </p>
-          <VoiceRecorder
-            onRecordingComplete={(blob) => setVoiceBlob(blob)}
-            onRemove={() => setVoiceBlob(null)}
           />
         </div>
 

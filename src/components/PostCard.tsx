@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
-import { MessageCircle, Share2, Clock, MapPin, Volume2, Flag } from 'lucide-react';
+import { MessageCircle, Share2, Clock, MapPin, Flag } from 'lucide-react';
 import SupportButton from './SupportButton';
 
 interface PostCardProps {
@@ -26,7 +26,7 @@ function timeAgo(date: string): string {
 
 export default function PostCard({ post }: PostCardProps) {
   const category = getCategoryInfo(post.category);
-  const urgency = URGENCY_CONFIG[post.urgency];
+  const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
 
   return (
     <article className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
@@ -91,14 +91,6 @@ export default function PostCard({ post }: PostCardProps) {
         <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-3">
           {post.content}
         </p>
-
-        {/* Voice indicator */}
-        {post.voice_url && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400 text-sm">
-            <Volume2 className="w-4 h-4" />
-            <span className="font-medium">Voice message attached</span>
-          </div>
-        )}
 
         {/* Image */}
         {post.image_url && (

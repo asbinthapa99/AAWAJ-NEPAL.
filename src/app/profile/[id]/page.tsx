@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Save,
   X,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 import { districts } from '@/lib/categories';
@@ -31,7 +32,7 @@ export default function ProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { user, refreshProfile } = useAuth();
+  const { user, refreshProfile, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +84,7 @@ export default function ProfilePage({
 
     setSaving(true);
 
-    await supabase
+    const { error } = await supabase
       .from('profiles')
       .update({
         full_name: editName.trim(),
@@ -92,10 +93,32 @@ export default function ProfilePage({
       })
       .eq('id', user.id);
 
+    if (error) {
+      console.error('Failed to save profile:', error.message);
+      setSaving(false);
+      return;
+    }
+
     await refreshProfile();
     await fetchProfile();
     setEditing(false);
     setSaving(false);
+  };
+
+  const handleClearCache = async () => {
+    if (!isOwnProfile) return;
+
+    try {
+      await signOut();
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+      window.location.reload();
+    }
   };
 
   if (loading) {
@@ -264,6 +287,19 @@ export default function ProfilePage({
                   </p>
                 </div>
               </div>
+
+              {isOwnProfile && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={handleClearCache}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-sm font-semibold hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Clear cache and sign out
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

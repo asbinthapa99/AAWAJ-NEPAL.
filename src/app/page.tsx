@@ -45,7 +45,10 @@ export default function Home() {
 
     query = query.limit(50);
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) {
+      console.error('Failed to fetch posts:', error.message);
+    }
     setPosts(data || []);
     setLoading(false);
   };
