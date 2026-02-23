@@ -1,10 +1,13 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-let client: SupabaseClient | null = null;
+declare global {
+  // eslint-disable-next-line no-var
+  var _supabaseClient: SupabaseClient | undefined;
+}
 
 export function createClient() {
-  if (client) return client;
+  if (globalThis._supabaseClient) return globalThis._supabaseClient;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -15,6 +18,6 @@ export function createClient() {
     );
   }
 
-  client = createBrowserClient(supabaseUrl, supabaseAnonKey);
-  return client;
+  globalThis._supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return globalThis._supabaseClient;
 }
