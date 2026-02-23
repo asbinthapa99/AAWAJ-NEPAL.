@@ -63,30 +63,13 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Verify captcha first
-    if (!captchaToken) {
-      setError('Please complete the captcha verification');
-      return;
-    }
-
     setLoading(true);
 
-    // Verify captcha token with backend
-    const captchaVerify = await fetch('/api/verify-captcha', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: captchaToken }),
-    });
-
-    const captchaResult = await captchaVerify.json();
-    if (!captchaResult.success) {
-      setError('Captcha verification failed. Please try again.');
-      setCaptchaToken('');
-      captchaRef.current?.reset();
-      setLoading(false);
-      return;
-    }
+    // TODO: Verify captcha - temporarily disabled for testing
+    // if (!captchaToken) {
+    //   setError('Please complete the captcha verification');
+    //   return;
+    // }
 
     const supabase = createClient();
     let loginEmail = identifier.trim();
@@ -121,8 +104,6 @@ export default function LoginPage() {
       } else {
         setError(error.message);
       }
-      setCaptchaToken('');
-      captchaRef.current?.reset();
       setLoading(false);
     } else {
       router.push('/');

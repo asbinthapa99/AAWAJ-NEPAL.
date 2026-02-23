@@ -25,30 +25,13 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Verify captcha first
-    if (!captchaToken) {
-      setError('Please complete the captcha verification');
-      return;
-    }
-
     setLoading(true);
 
-    // Verify captcha token with backend
-    const captchaVerify = await fetch('/api/verify-captcha', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: captchaToken }),
-    });
-
-    const captchaResult = await captchaVerify.json();
-    if (!captchaResult.success) {
-      setError('Captcha verification failed. Please try again.');
-      setCaptchaToken('');
-      captchaRef.current?.reset();
-      setLoading(false);
-      return;
-    }
+    // TODO: Verify captcha - temporarily disabled for testing
+    // if (!captchaToken) {
+    //   setError('Please complete the captcha verification');
+    //   return;
+    // }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
@@ -73,8 +56,6 @@ export default function RegisterPage() {
 
     if (existingUser) {
       setError('This username is already taken. Please choose a different one.');
-      setCaptchaToken('');
-      captchaRef.current?.reset();
       setLoading(false);
       return;
     }
@@ -98,14 +79,10 @@ export default function RegisterPage() {
       } else {
         setError(error.message);
       }
-      setCaptchaToken('');
-      captchaRef.current?.reset();
       setLoading(false);
     } else if (data?.user && !data.user.identities?.length) {
       // Supabase returns a user with no identities when email already exists
       setError('An account with this email already exists. Please sign in instead.');
-      setCaptchaToken('');
-      captchaRef.current?.reset();
       setLoading(false);
     } else {
       // Send OTP code for verification
