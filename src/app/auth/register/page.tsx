@@ -66,11 +66,20 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered')) {
-        setError('An account with this email already exists. Please sign in instead.');
+      let errorMsg = 'Failed to create account. ';
+      
+      if (error.message) {
+        if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered')) {
+          errorMsg = 'An account with this email already exists. Please sign in instead.';
+        } else {
+          errorMsg += error.message;
+        }
       } else {
-        setError(error.message);
+        errorMsg += 'Please check your input and try again.';
       }
+      
+      console.error('Signup error:', error);
+      setError(errorMsg);
       setLoading(false);
     } else if (data?.user && !data.user.identities?.length) {
       // Supabase returns a user with no identities when email already exists
