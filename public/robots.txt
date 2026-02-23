@@ -1,0 +1,29 @@
+# Awaaz Nepal - robots.txt
+# Configuration for search engine crawlers
+
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /profile/*/edit
+Disallow: /api/
+Disallow: /_next/
+Disallow: /private/
+
+# Sitemap location
+Sitemap: https://awaaz-nepal.vercel.app/sitemap.xml
+
+# Crawl delay (in seconds)
+Crawl-delay: 1
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
