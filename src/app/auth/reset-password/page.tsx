@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Loader2, Megaphone, Lock, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Megaphone, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
