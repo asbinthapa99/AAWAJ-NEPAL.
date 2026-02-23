@@ -32,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return (localStorage.getItem('awaaz-theme') as Theme | null) || 'system';
   });
 
-  const systemTheme = useSyncExternalStore(
+  const systemTheme = useSyncExternalStore<'light' | 'dark'>(
     (callback) => {
       if (typeof window === 'undefined') return () => {};
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
