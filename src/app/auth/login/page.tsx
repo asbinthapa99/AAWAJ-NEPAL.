@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -14,8 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [loadingOTP, setLoadingOTP] = useState(false);
   const [error, setError] = useState('');
-  const [captchaToken, setCaptchaToken] = useState('');
-  const captchaRef = useRef<any>(null);
+  const [isHuman, setIsHuman] = useState(false);
   const router = useRouter();
 
   const handleLoginWithCode = async () => {
@@ -192,16 +190,22 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <HCaptcha
-            ref={captchaRef}
-            sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '03fc2e1c-8970-4cec-bc4a-1250737e2a92'}
-            onVerify={(token) => setCaptchaToken(token)}
-            theme="dark"
-          />
+          <div className="flex items-center gap-3 p-4 bg-green-900/20 border border-green-700 rounded-xl">
+            <input
+              type="checkbox"
+              id="human-check"
+              checked={isHuman}
+              onChange={(e) => setIsHuman(e.target.checked)}
+              className="w-5 h-5 rounded cursor-pointer accent-green-500"
+            />
+            <label htmlFor="human-check" className="text-sm text-gray-300 cursor-pointer flex-1">
+              I am human
+            </label>
+          </div>
 
           <button
             type="submit"
-            disabled={loading || loadingOTP}
+            disabled={loading || loadingOTP || !isHuman}
             className="w-full py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}

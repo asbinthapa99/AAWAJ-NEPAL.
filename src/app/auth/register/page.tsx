@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, Megaphone, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { districts } from '@/lib/categories';
-import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -18,20 +17,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState('');
-  const captchaRef = useRef<any>(null);
+  const [isHuman, setIsHuman] = useState(false);
   const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
-    // TODO: Verify captcha - temporarily disabled for testing
-    // if (!captchaToken) {
-    //   setError('Please complete the captcha verification');
-    //   return;
-    // }
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
@@ -248,16 +240,22 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <HCaptcha
-            ref={captchaRef}
-            sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '03fc2e1c-8970-4cec-bc4a-1250737e2a92'}
-            onVerify={(token) => setCaptchaToken(token)}
-            theme="dark"
-          />
+          <div className="flex items-center gap-3 p-4 bg-green-900/20 border border-green-700 rounded-xl">
+            <input
+              type="checkbox"
+              id="human-check-register"
+              checked={isHuman}
+              onChange={(e) => setIsHuman(e.target.checked)}
+              className="w-5 h-5 rounded cursor-pointer accent-green-500"
+            />
+            <label htmlFor="human-check-register" className="text-sm text-gray-300 cursor-pointer flex-1">
+              I am human
+            </label>
+          </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !isHuman}
             className="w-full py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
