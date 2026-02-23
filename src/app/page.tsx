@@ -9,7 +9,7 @@ import { APP_NAME, APP_NAME_NP } from '@/lib/constants';
 import { Megaphone, TrendingUp, Clock, Loader2, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
-import NepalFlag3D from '@/components/NepalFlag3D';
+import NepalFlag from '@/components/NepalFlag3D';
 
 type SortMode = 'latest' | 'trending';
 
@@ -58,27 +58,27 @@ export default function Home() {
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* Hero Section */}
       <div className="relative mb-10 overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-white via-red-50/30 to-blue-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-blue-950/20 animate-hero-glow">
-        <div className="flex flex-col md:flex-row items-center gap-6 p-6 md:p-10">
+        <div className="flex flex-col-reverse sm:flex-row items-center gap-4 sm:gap-6 p-4 sm:p-6 md:p-10">
           {/* Text Content */}
           <div className="flex-1 text-center md:text-left z-10">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-sm font-medium mb-4 animate-hero-fade-up">
               <Megaphone className="w-4 h-4" />
               <span>Voice of Nepali Youth</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-3 leading-tight animate-hero-fade-up-delay">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-2 sm:mb-3 leading-tight animate-hero-fade-up-delay">
               {APP_NAME}{' '}
-              <span className="text-xl md:text-2xl text-gray-400">({APP_NAME_NP})</span>
+              <span className="text-base sm:text-xl md:text-2xl text-gray-400">({APP_NAME_NP})</span>
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 max-w-lg animate-hero-fade-up-delay-2">
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-lg animate-hero-fade-up-delay-2">
               Raise your voice about the problems affecting Nepal. Together we can make a difference.
               <br />
-              <span className="text-sm">नेपालमा भइरहेका समस्याहरूमा आफ्नो आवाज उठाउनुहोस्।</span>
+              <span className="text-xs sm:text-sm">नेपालमा भइरहेका समस्याहरूमा आफ्नो आवाज उठाउनुहोस्।</span>
             </p>
 
             {user && (
               <Link
                 href="/post/create"
-                className="inline-flex items-center gap-2 mt-5 px-6 py-3 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-2xl font-semibold hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-lg shadow-red-500/20 text-sm animate-hero-fade-up-delay-3"
+                className="inline-flex items-center gap-2 mt-4 sm:mt-5 px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-2xl font-semibold hover:scale-105 hover:shadow-xl transition-all duration-300 shadow-lg shadow-red-500/20 text-xs sm:text-sm animate-hero-fade-up-delay-3"
               >
                 <PlusCircle className="w-5 h-5" />
                 Raise Your Voice
@@ -86,9 +86,9 @@ export default function Home() {
             )}
           </div>
 
-          {/* 3D Flag */}
-          <div className="w-48 h-64 md:w-56 md:h-72 flex-shrink-0 animate-hero-scale-in">
-            <NepalFlag3D />
+          {/* Nepal Flag */}
+          <div className="w-28 h-36 sm:w-40 sm:h-52 md:w-56 md:h-72 lg:w-64 lg:h-80 flex-shrink-0 animate-hero-scale-in">
+            <NepalFlag />
           </div>
         </div>
 

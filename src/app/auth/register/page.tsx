@@ -30,14 +30,34 @@ export default function RegisterPage() {
       return;
     }
 
+    if (username.length < 3) {
+      setError('Username must be at least 3 characters');
+      setLoading(false);
+      return;
+    }
+
     const supabase = createClient();
 
-    const { error } = await supabase.auth.signUp({
+    // Check if username is already taken
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('username', username.toLowerCase())
+      .single();
+
+    if (existingUser) {
+      setError('This username is already taken. Please choose a different one.');
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/`,
         data: {
-          username,
+          username: username.toLowerCase(),
           full_name: fullName,
           district,
         },
@@ -45,14 +65,24 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message.toLowerCase().includes('already registered') || error.message.toLowerCase().includes('already been registered')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(error.message);
+      }
+      setLoading(false);
+    } else if (data?.user && !data.user.identities?.length) {
+      // Supabase returns a user with no identities when email already exists
+      setError('An account with this email already exists. Please sign in instead.');
       setLoading(false);
     } else {
-      setSuccess(true);
-      setTimeout(() => {
-        router.push('/');
-        router.refresh();
-      }, 2000);
+      // Send OTP code for verification
+      await supabase.auth.signInWithOtp({
+        email: email,
+      });
+      
+      // Redirect to verification page
+      router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
     }
   };
 
@@ -67,8 +97,14 @@ export default function RegisterPage() {
             Account Created! 🎉
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Welcome to Awaaz Nepal! Check your email to verify your account, then start raising your voice.
+            Welcome to Awaaz Nepal! We sent a verification email to your inbox. Please verify your email, then sign in.
           </p>
+          <Link
+            href="/auth/login"
+            className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+          >
+            Go to Sign In
+          </Link>
         </div>
       </div>
     );

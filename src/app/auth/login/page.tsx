@@ -7,12 +7,55 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingOTP, setLoadingOTP] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  const handleLoginWithCode = async () => {
+    if (!identifier.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+
+    setError('');
+    setLoadingOTP(true);
+
+    const supabase = createClient();
+    let loginEmail = identifier.trim();
+
+    // If input doesn't look like an email, treat it as a username
+    if (!loginEmail.includes('@')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', loginEmail.toLowerCase())
+        .single();
+
+      if (!profile || !profile.email) {
+        setError('No account found with that username.');
+        setLoadingOTP(false);
+        return;
+      }
+
+      loginEmail = profile.email;
+    }
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email: loginEmail,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoadingOTP(false);
+    } else {
+      // Redirect to verification page
+      router.push(`/auth/verify-email?email=${encodeURIComponent(loginEmail)}`);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,13 +63,38 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
+    let loginEmail = identifier.trim();
+
+    // If input doesn't look like an email, treat it as a username
+    if (!loginEmail.includes('@')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', loginEmail.toLowerCase())
+        .single();
+
+      if (!profile || !profile.email) {
+        setError('No account found with that username.');
+        setLoading(false);
+        return;
+      }
+
+      loginEmail = profile.email;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message === 'Invalid login credentials') {
+        setError('Invalid email/username or password. If you just signed up, please verify your email first.');
+      } else if (error.message === 'Email not confirmed') {
+        setError('Please check your inbox and verify your email before signing in.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
       router.push('/');
@@ -63,15 +131,15 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Email
+              Email or Username
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or username"
                 required
                 className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500"
               />
@@ -106,13 +174,41 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="flex justify-end">
+            <Link
+              href="/auth/forgot-password"
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || loadingOTP}
             className="w-full py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Sign In
+          </button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 bg-white dark:bg-gray-900 text-gray-500">Or</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleLoginWithCode}
+            disabled={loading || loadingOTP}
+            className="w-full py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {loadingOTP && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loadingOTP ? 'Sending code...' : 'Sign in with email code'}
           </button>
 
           <p className="text-center text-sm text-gray-500 dark:text-gray-400">

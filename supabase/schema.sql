@@ -12,6 +12,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
+  email TEXT,
   full_name TEXT NOT NULL,
   avatar_url TEXT,
   bio TEXT,
@@ -203,10 +204,11 @@ BEGIN
     'user_' || SUBSTR(NEW.id::TEXT, 1, 8)
   );
   
-  INSERT INTO profiles (id, username, full_name, avatar_url, district)
+  INSERT INTO profiles (id, username, email, full_name, avatar_url, district)
   VALUES (
     NEW.id,
     v_username,
+    NEW.email,
     COALESCE(
       NULLIF(NEW.raw_user_meta_data->>'full_name', ''),
       split_part(NEW.email, '@', 1)

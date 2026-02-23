@@ -77,6 +77,19 @@ body {
   }
 }
 
+@keyframes flag-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-flag-float {
+  animation: flag-float 3s ease-in-out infinite;
+}
+
 @keyframes hero-glow-pulse {
   0%, 100% {
     box-shadow: 0 0 20px rgba(220, 20, 60, 0.15), 0 0 60px rgba(0, 56, 147, 0.08);
