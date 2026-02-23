@@ -157,6 +157,26 @@ CREATE POLICY "Users can view their own reports"
   ON reports FOR SELECT USING (auth.uid() = reporter_id);
 
 -- ============================================================
+-- NEWS TABLE
+-- ============================================================
+CREATE TABLE IF NOT EXISTS news (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  link TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE news ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "News is viewable by everyone"
+  ON news FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can create news"
+  ON news FOR INSERT WITH CHECK (auth.uid() = author_id);
+
+-- ============================================================
 -- FUNCTIONS: Auto-increment/decrement counts
 -- ============================================================
 
@@ -295,3 +315,64 @@ CREATE INDEX IF NOT EXISTS idx_dislikes_user ON dislikes(user_id);
 -- Set it as a public bucket for easy access
 -- Create bucket named: 'avatars'
 -- Set it as a public bucket for easy access
+
+-- ============================================================
+-- STORAGE POLICIES (run in Supabase SQL Editor)
+-- ============================================================
+-- Public read for post images
+CREATE POLICY "Post images are publicly readable"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'post-images');
+
+-- Users can upload their own post images
+CREATE POLICY "Users can upload their own post images"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'post-images'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );
+
+-- Users can update their own post images
+CREATE POLICY "Users can update their own post images"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'post-images'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );
+
+-- Users can delete their own post images
+CREATE POLICY "Users can delete their own post images"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'post-images'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );
+
+-- Public read for avatars
+CREATE POLICY "Avatar images are publicly readable"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'avatars');
+
+-- Users can upload their own avatar
+CREATE POLICY "Users can upload their own avatar"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );
+
+-- Users can update their own avatar
+CREATE POLICY "Users can update their own avatar"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'avatars'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );
+
+-- Users can delete their own avatar
+CREATE POLICY "Users can delete their own avatar"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'avatars'
+    AND auth.uid()::text = split_part(name, '_', 2)
+  );

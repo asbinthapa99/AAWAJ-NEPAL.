@@ -41,10 +41,95 @@ html {
   overflow: hidden;
 }
 
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Particle Background ── */
+.particle-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(1200px 400px at 10% -10%, rgba(220, 20, 60, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 110% 0%, rgba(0, 56, 147, 0.12), transparent 55%),
+    radial-gradient(500px 500px at 30% 80%, rgba(34, 197, 94, 0.08), transparent 60%),
+    radial-gradient(400px 400px at 80% 70%, rgba(59, 130, 246, 0.08), transparent 60%);
+  pointer-events: none;
+  animation: particle-drift 18s ease-in-out infinite;
+}
+
+@keyframes particle-drift {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(-12px); opacity: 1; }
+}
+
+/* ── Marquee ── */
+.news-marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.news-track {
+  display: inline-flex;
+  gap: 24px;
+  animation: marquee 18s linear infinite;
+}
+
+.news-item {
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-40%); }
+}
+
+/* ── Stagger ── */
+.animate-stagger-1 { animation: hero-fade-up 0.7s ease-out 0.05s both; }
+.animate-stagger-2 { animation: hero-fade-up 0.7s ease-out 0.1s both; }
+.animate-stagger-3 { animation: hero-fade-up 0.7s ease-out 0.15s both; }
+.animate-stagger-4 { animation: hero-fade-up 0.7s ease-out 0.2s both; }
+.animate-stagger-5 { animation: hero-fade-up 0.7s ease-out 0.25s both; }
+.animate-stagger-6 { animation: hero-fade-up 0.7s ease-out 0.3s both; }
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* ── Social Icon Pills ── */
+.social-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
 }
 
 /* ── Nepal Flag 3D Canvas ── */

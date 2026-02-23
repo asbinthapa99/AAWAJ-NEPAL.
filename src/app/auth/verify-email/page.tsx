@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Megaphone, CheckCircle, Mail } from 'lucide-react';
 import Link from 'next/link';
@@ -13,17 +13,10 @@ function VerifyEmailContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [email, setEmail] = useState('');
   const [resending, setResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const emailParam = searchParams.get('email');
-    if (emailParam) {
-      setEmail(emailParam);
-    }
-  }, [searchParams]);
+  const email = searchParams.get('email') || '';
 
   const handleCodeChange = (index: number, value: string) => {
     if (value.length > 1) {

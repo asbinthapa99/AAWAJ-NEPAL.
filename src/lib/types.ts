@@ -64,4 +64,13 @@ export interface Report {
   created_at: string;
 }
 
+export interface News {
+  id: string;
+  author_id: string;
+  title: string;
+  body: string;
+  link: string | null;
+  created_at: string;
+}
+
 export type Theme = 'light' | 'dark' | 'system';
