@@ -1,14 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
-import { MessageCircle, Share2, Clock, MapPin, Flag } from 'lucide-react';
+import { MessageCircle, Share2, Clock, MapPin, Flag, Trash2 } from 'lucide-react';
 import SupportButton from './SupportButton';
+import DislikeButton from './DislikeButton';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from './AuthProvider';
 
 interface PostCardProps {
   post: Post;
+  onDeleted?: (postId: string) => void;
 }
 
 function timeAgo(date: string): string {
@@ -24,9 +29,31 @@ function timeAgo(date: string): string {
   return `${months}mo ago`;
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, onDeleted }: PostCardProps) {
+  const { user } = useAuth();
+  const [deleting, setDeleting] = useState(false);
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
+
+  const handleDelete = async () => {
+    if (!user || user.id !== post.author_id || deleting) return;
+    if (!window.confirm('Delete this post? This action cannot be undone.')) return;
+
+    setDeleting(true);
+    const supabase = createClient();
+    const { error } = await supabase.from('posts').delete().eq('id', post.id);
+    if (error) {
+      alert('Failed to delete post: ' + error.message);
+      setDeleting(false);
+      return;
+    }
+
+    if (onDeleted) {
+      onDeleted(post.id);
+    } else {
+      window.location.reload();
+    }
+  };
 
   return (
     <article className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 shadow-sm hover:shadow-md">
@@ -112,6 +139,11 @@ export default function PostCard({ post }: PostCardProps) {
             initialCount={post.supports_count}
           />
 
+          <DislikeButton
+            postId={post.id}
+            initialCount={post.dislikes_count}
+          />
+
           <Link
             href={`/post/${post.id}`}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -125,9 +157,21 @@ export default function PostCard({ post }: PostCardProps) {
           </button>
         </div>
 
-        <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-          <Flag className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+            <Flag className="w-4 h-4" />
+          </button>
+          {user?.id === post.author_id && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+              title="Delete post"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

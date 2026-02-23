@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS posts (
   voice_url TEXT,
   image_url TEXT,
   supports_count INTEGER DEFAULT 0,
+  dislikes_count INTEGER DEFAULT 0,
   comments_count INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -113,6 +114,28 @@ CREATE POLICY "Users can remove their support"
   ON supports FOR DELETE USING (auth.uid() = user_id);
 
 -- ============================================================
+-- DISLIKES TABLE (downvotes)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS dislikes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(post_id, user_id)
+);
+
+ALTER TABLE dislikes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Dislikes are viewable by everyone"
+  ON dislikes FOR SELECT USING (true);
+
+CREATE POLICY "Authenticated users can dislike posts"
+  ON dislikes FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can remove their dislike"
+  ON dislikes FOR DELETE USING (auth.uid() = user_id);
+
+-- ============================================================
 -- REPORTS TABLE
 -- ============================================================
 CREATE TABLE IF NOT EXISTS reports (
@@ -155,6 +178,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Function to increment dislikes_count
+CREATE OR REPLACE FUNCTION increment_dislikes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET dislikes_count = dislikes_count + 1 WHERE id = NEW.post_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to decrement dislikes_count
+CREATE OR REPLACE FUNCTION decrement_dislikes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE posts SET dislikes_count = GREATEST(dislikes_count - 1, 0) WHERE id = OLD.post_id;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Function to increment comments_count
 CREATE OR REPLACE FUNCTION increment_comments_count()
 RETURNS TRIGGER AS $$
@@ -181,6 +222,14 @@ CREATE TRIGGER on_support_added
 CREATE TRIGGER on_support_removed
   AFTER DELETE ON supports
   FOR EACH ROW EXECUTE FUNCTION decrement_supports_count();
+
+CREATE TRIGGER on_dislike_added
+  AFTER INSERT ON dislikes
+  FOR EACH ROW EXECUTE FUNCTION increment_dislikes_count();
+
+CREATE TRIGGER on_dislike_removed
+  AFTER DELETE ON dislikes
+  FOR EACH ROW EXECUTE FUNCTION decrement_dislikes_count();
 
 CREATE TRIGGER on_comment_added
   AFTER INSERT ON comments
@@ -236,6 +285,8 @@ CREATE INDEX IF NOT EXISTS idx_posts_author ON posts(author_id);
 CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_id);
 CREATE INDEX IF NOT EXISTS idx_supports_post ON supports(post_id);
 CREATE INDEX IF NOT EXISTS idx_supports_user ON supports(user_id);
+CREATE INDEX IF NOT EXISTS idx_dislikes_post ON dislikes(post_id);
+CREATE INDEX IF NOT EXISTS idx_dislikes_user ON dislikes(user_id);
 
 -- ============================================================
 -- STORAGE BUCKETS (run in Supabase Dashboard > Storage)

@@ -18,10 +18,16 @@ export function createClient() {
     );
   }
 
+  // Disable navigator lock — safe since we enforce a single client instance
+  const lock: <R>(name: string, acquireTimeout: number, fn: () => Promise<R>) => Promise<R> = (
+    _name,
+    _acquireTimeout,
+    fn
+  ) => fn();
+
   globalThis._supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      // Disable navigator lock — safe since we enforce a single client instance
-      lock: <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn(),
+      lock,
     },
   });
   return globalThis._supabaseClient;

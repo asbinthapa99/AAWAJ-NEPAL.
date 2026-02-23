@@ -7,6 +7,7 @@ import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
 import CommentSection from '@/components/CommentSection';
 import SupportButton from '@/components/SupportButton';
+import DislikeButton from '@/components/DislikeButton';
 import ReportDialog from '@/components/ReportDialog';
 import {
   Clock,
@@ -15,6 +16,7 @@ import {
   Flag,
   ArrowLeft,
   Loader2,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
@@ -43,6 +45,7 @@ export default function PostDetailPage({
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [userSupported, setUserSupported] = useState(false);
+  const [userDisliked, setUserDisliked] = useState(false);
 
   const supabase = createClient();
 
@@ -70,6 +73,15 @@ export default function PostDetailPage({
         .single();
 
       setUserSupported(!!support);
+
+      const { data: dislike } = await supabase
+        .from('dislikes')
+        .select('id')
+        .eq('post_id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      setUserDisliked(!!dislike);
     }
 
     setLoading(false);
@@ -105,6 +117,19 @@ export default function PostDetailPage({
 
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
+
+  const handleDelete = async () => {
+    if (!user || user.id !== post.author_id) return;
+    if (!window.confirm('Delete this post? This action cannot be undone.')) return;
+
+    const { error } = await supabase.from('posts').delete().eq('id', post.id);
+    if (error) {
+      alert('Failed to delete post: ' + error.message);
+      return;
+    }
+
+    window.location.href = '/feed';
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -196,19 +221,35 @@ export default function PostDetailPage({
               initialCount={post.supports_count}
               initialSupported={userSupported}
             />
+            <DislikeButton
+              postId={post.id}
+              initialCount={post.dislikes_count}
+              initialDisliked={userDisliked}
+            />
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <Share2 className="w-4 h-4" />
               <span>Share</span>
             </button>
           </div>
 
-          <button
-            onClick={() => setShowReport(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <Flag className="w-4 h-4" />
-            <span>Report</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
+              <Flag className="w-4 h-4" />
+              <span>Report</span>
+            </button>
+            {user?.id === post.author_id && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete</span>
+              </button>
+            )}
+          </div>
         </div>
       </article>
 

@@ -33,6 +33,7 @@ export interface Post {
   voice_url: string | null;
   image_url: string | null;
   supports_count: number;
+  dislikes_count: number;
   comments_count: number;
   created_at: string;
   author?: Profile;
