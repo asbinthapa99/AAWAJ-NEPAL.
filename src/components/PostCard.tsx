@@ -205,6 +205,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
         <DislikeButton
           postId={post.id}
           initialCount={post.dislikes_count}
+          initialDisliked={post.user_has_disliked}
         />
 
         <Link

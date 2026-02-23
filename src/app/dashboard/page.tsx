@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -17,6 +17,7 @@ import {
   Newspaper,
   Users,
   Flame,
+  Coins,
 } from 'lucide-react';
 
 type FeedSection = 'for-you' | 'trending' | 'latest';
@@ -34,8 +35,34 @@ export default function DashboardPage() {
   const [hasMore, setHasMore] = useState(true);
   const [news, setNews] = useState<News[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [goldItems, setGoldItems] = useState<{ id: number; label: string; value: string }[]>([]);
+  const [goldUpdatedAt, setGoldUpdatedAt] = useState<string>('');
+  const [goldLoading, setGoldLoading] = useState(true);
+  const [goldError, setGoldError] = useState('');
+
+  const insertBufferRef = useRef<Post[]>([]);
+  const insertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const POSTS_PER_PAGE = 15;
+
+  const attachDislikeFlags = async (items: Post[]) => {
+    if (!user || items.length === 0) return items;
+
+    const postIds = items.map((post) => post.id);
+    const { data, error } = await supabase
+      .from('dislikes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds);
+
+    if (error || !data) return items;
+
+    const dislikedIds = new Set(data.map((row) => row.post_id));
+    return items.map((post) => ({
+      ...post,
+      user_has_disliked: dislikedIds.has(post.id),
+    }));
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -71,16 +98,14 @@ export default function DashboardPage() {
         author: Array.isArray(post.author) ? post.author[0] : post.author,
       })) as Post[];
 
+      const hydratedData = await attachDislikeFlags(normalizedData);
+
       if (error) {
         console.error('Failed to fetch posts:', error.message);
         setHasMore(false);
       } else {
-        if (isLoadMore) {
-          setPosts((prev) => [...prev, ...normalizedData]);
-        } else {
-          setPosts(normalizedData);
-        }
-        setHasMore(normalizedData.length >= POSTS_PER_PAGE);
+        setPosts((prev) => (isLoadMore ? [...prev, ...hydratedData] : hydratedData));
+        setHasMore(hydratedData.length >= POSTS_PER_PAGE);
       }
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -114,6 +139,94 @@ export default function DashboardPage() {
     if (user) fetchNews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    const fetchGoldPrice = async () => {
+      setGoldLoading(true);
+      setGoldError('');
+      try {
+        const response = await fetch('/api/gold-price');
+        if (!response.ok) throw new Error('Request failed');
+        const data = await response.json();
+        if (!active) return;
+        setGoldItems(Array.isArray(data?.items) ? data.items : []);
+        setGoldUpdatedAt(data?.updated_at ?? '');
+      } catch (error) {
+        if (!active) return;
+        setGoldError('Unable to fetch gold prices right now.');
+        setGoldItems([]);
+      } finally {
+        if (!active) return;
+        setGoldLoading(false);
+      }
+    };
+
+    fetchGoldPrice();
+    const interval = setInterval(fetchGoldPrice, 5 * 60 * 1000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('posts-insert')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          const newPost = payload.new as Post;
+
+          if (activeSection !== 'for-you') return;
+          if (category !== 'all' && newPost.category !== category) return;
+
+          insertBufferRef.current.push(newPost);
+
+          if (insertTimerRef.current) return;
+          insertTimerRef.current = setTimeout(async () => {
+            const buffer = [...insertBufferRef.current];
+            insertBufferRef.current = [];
+            insertTimerRef.current = null;
+
+            if (buffer.length === 0) return;
+
+            const authorIds = [...new Set(buffer.map((post) => post.author_id))];
+            const { data: authors } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('id', authorIds);
+
+            const authorMap = new Map((authors || []).map((author) => [author.id, author]));
+            const hydrated = buffer.map((post) => ({
+              ...post,
+              author: authorMap.get(post.author_id),
+              user_has_disliked: false,
+            }));
+
+            setPosts((prev) => {
+              const existingIds = new Set(prev.map((post) => post.id));
+              const additions = hydrated.filter((post) => !existingIds.has(post.id));
+              return additions.length ? [...additions, ...prev] : prev;
+            });
+          }, 400);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (insertTimerRef.current) {
+        clearTimeout(insertTimerRef.current);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [activeSection, category, supabase, user]);
 
   if (authLoading) {
     return (
@@ -179,7 +292,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-[#393a3b]">
-            <p className="px-3 text-xs font-semibold text-gray-500 dark:text-[#b0b3b8] uppercase tracking-wide mb-2">Explore Categories</p>
+            <p className="px-3 text-xs font-semibold text-gray-500 dark:text-[#b0b3b8] uppercase tracking-wide mb-2">Category Discussions</p>
             <div className="space-y-0.5">
               {[
                 { label: 'Infrastructure', icon: '🏗️', cat: 'infrastructure' as PostCategory },
@@ -202,6 +315,36 @@ export default function DashboardPage() {
                   <span className="text-[14px] font-medium">{item.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-[#393a3b]">
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <Coins className="w-4 h-4 text-[#1877F2]" />
+              <p className="text-xs font-semibold text-gray-500 dark:text-[#b0b3b8] uppercase tracking-wide">Gold Prices</p>
+            </div>
+            <div className="mx-3 rounded-lg bg-white/80 dark:bg-[#242526] border border-gray-200 dark:border-[#393a3b] p-3 text-xs">
+              {goldUpdatedAt && (
+                <p className="text-[11px] text-gray-400 dark:text-[#b0b3b8] mb-2">Updated: {goldUpdatedAt}</p>
+              )}
+              {goldLoading ? (
+                <div className="flex items-center gap-2 text-gray-500 dark:text-[#b0b3b8]">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...
+                </div>
+              ) : goldError ? (
+                <p className="text-red-500">{goldError}</p>
+              ) : goldItems.length === 0 ? (
+                <p className="text-gray-500 dark:text-[#b0b3b8]">No data.</p>
+              ) : (
+                <div className="space-y-2">
+                  {goldItems.slice(0, 4).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between">
+                      <span className="text-gray-700 dark:text-[#e4e6eb]">{item.label}</span>
+                      <span className="font-semibold text-gray-900 dark:text-[#e4e6eb]">{item.value || '--'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

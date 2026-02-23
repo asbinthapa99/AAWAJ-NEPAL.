@@ -54,7 +54,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ── Particle Background ── */
+/* ── Landing Page Visuals (lightweight) ── */
 .particle-bg {
   position: absolute;
   inset: 0;
@@ -64,15 +64,8 @@ body {
     radial-gradient(500px 500px at 30% 80%, rgba(34, 197, 94, 0.08), transparent 60%),
     radial-gradient(400px 400px at 80% 70%, rgba(59, 130, 246, 0.08), transparent 60%);
   pointer-events: none;
-  animation: particle-drift 18s ease-in-out infinite;
 }
 
-@keyframes particle-drift {
-  0%, 100% { transform: translateY(0); opacity: 0.9; }
-  50% { transform: translateY(-12px); opacity: 1; }
-}
-
-/* ── Marquee ── */
 .news-marquee {
   overflow: hidden;
   white-space: nowrap;
@@ -82,7 +75,6 @@ body {
 .news-track {
   display: inline-flex;
   gap: 24px;
-  animation: marquee 18s linear infinite;
 }
 
 .news-item {
@@ -90,152 +82,54 @@ body {
   color: #e5e7eb;
 }
 
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-40%); }
+.animate-stagger-1,
+.animate-stagger-2,
+.animate-stagger-3,
+.animate-stagger-4,
+.animate-stagger-5,
+.animate-stagger-6,
+.animate-float-slow,
+.animate-hero-fade-up,
+.animate-hero-fade-up-delay,
+.animate-hero-fade-up-delay-2,
+.animate-hero-fade-up-delay-3,
+.animate-hero-scale-in,
+.animate-hero-glow,
+.animate-slide-left,
+.animate-slide-right,
+.float-orbit,
+.card-glow {
+  animation: none;
 }
 
-/* ── Stagger ── */
-.animate-stagger-1 { animation: hero-fade-up 0.7s ease-out 0.05s both; }
-.animate-stagger-2 { animation: hero-fade-up 0.7s ease-out 0.1s both; }
-.animate-stagger-3 { animation: hero-fade-up 0.7s ease-out 0.15s both; }
-.animate-stagger-4 { animation: hero-fade-up 0.7s ease-out 0.2s both; }
-.animate-stagger-5 { animation: hero-fade-up 0.7s ease-out 0.25s both; }
-.animate-stagger-6 { animation: hero-fade-up 0.7s ease-out 0.3s both; }
-
-.animate-float-slow {
-  animation: float-slow 4s ease-in-out infinite;
+.section-reveal,
+.section-reveal-delay-1,
+.section-reveal-delay-2,
+.section-reveal-delay-3 {
+  opacity: 1;
+  transform: none;
 }
 
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+.bg-sweep {
+  background-size: cover;
 }
 
-/* ── Social Icon Pills ── */
-.social-icon {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  background: #111827;
-  color: #fff;
-  font-weight: 700;
-  font-size: 12px;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+.shimmer-bar {
+  position: relative;
+  overflow: hidden;
 }
 
-.social-icon:hover {
-  transform: translateY(-2px);
-  opacity: 0.9;
+.shimmer-bar::after {
+  content: '';
+  display: none;
 }
 
-/* ── Nepal Flag 3D Canvas ── */
-.nepal-flag-canvas {
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
+.hover-float {
+  transition: box-shadow 0.25s ease;
 }
 
-/* ── Hero Animations ── */
-@keyframes hero-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes hero-scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.85);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes flag-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animate-flag-float {
-  animation: flag-float 3s ease-in-out infinite;
-}
-
-@keyframes hero-glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(220, 20, 60, 0.15), 0 0 60px rgba(0, 56, 147, 0.08);
-  }
-  50% {
-    box-shadow: 0 0 35px rgba(220, 20, 60, 0.25), 0 0 80px rgba(0, 56, 147, 0.15);
-  }
-}
-
-@keyframes slide-in-left {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-.animate-hero-fade-up {
-  animation: hero-fade-up 0.8s ease-out both;
-}
-
-.animate-hero-fade-up-delay {
-  animation: hero-fade-up 0.8s ease-out 0.15s both;
-}
-
-.animate-hero-fade-up-delay-2 {
-  animation: hero-fade-up 0.8s ease-out 0.3s both;
-}
-
-.animate-hero-fade-up-delay-3 {
-  animation: hero-fade-up 0.8s ease-out 0.45s both;
-}
-
-.animate-hero-scale-in {
-  animation: hero-scale-in 1s ease-out 0.2s both;
-}
-
-.animate-hero-glow {
-  animation: hero-glow-pulse 3s ease-in-out infinite;
-}
-
-.animate-slide-left {
-  animation: slide-in-left 0.7s ease-out 0.5s both;
-}
-
-.animate-slide-right {
-  animation: slide-in-right 0.7s ease-out 0.5s both;
+.hover-float:hover {
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
 }
 
 /* Cookie consent slide up */
@@ -254,259 +148,58 @@ body {
   animation: slide-up 0.5s ease-out both;
 }
 
-/* ── Premium Motion ── */
-@keyframes reveal-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(26px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* ── Social Icon Pills ── */
+.social-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  transition: opacity 0.2s ease;
 }
 
-@keyframes soft-sweep {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+.social-icon:hover {
+  opacity: 0.9;
 }
 
-@keyframes shimmer-line {
-  0% { transform: translateX(-120%); opacity: 0; }
-  40% { opacity: 0.9; }
-  100% { transform: translateX(120%); opacity: 0; }
+/* ── Nepal Flag 3D Canvas ── */
+.nepal-flag-canvas {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-@keyframes float-orbit {
-  0%, 100% { transform: translateY(0) translateX(0); }
-  50% { transform: translateY(-10px) translateX(6px); }
-}
-
-@keyframes card-glow {
-  0%, 100% { box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08); }
-  50% { box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18); }
-}
-
-.section-reveal {
-  animation: reveal-rise 0.9s ease-out both;
-}
-
-.section-reveal-delay-1 { animation: reveal-rise 0.9s ease-out 0.1s both; }
-.section-reveal-delay-2 { animation: reveal-rise 0.9s ease-out 0.2s both; }
-.section-reveal-delay-3 { animation: reveal-rise 0.9s ease-out 0.3s both; }
-
-.bg-sweep {
-  background-size: 200% 200%;
-  animation: soft-sweep 12s ease-in-out infinite alternate;
-}
-
-.shimmer-bar {
-  position: relative;
-  overflow: hidden;
-}
-
-.shimmer-bar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  width: 40%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-  transform: translateX(-120%);
-  animation: shimmer-line 5s ease-in-out infinite;
-}
-
-.hover-float {
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-}
-
-.hover-float:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.15);
-}
-
-.float-orbit {
-  animation: float-orbit 5s ease-in-out infinite;
-}
-
-.card-glow {
-  animation: card-glow 6s ease-in-out infinite;
-}
-
-/* ── Premium Feature Card ── */
-@keyframes border-spin {
-  0% { --angle: 0deg; }
-  100% { --angle: 360deg; }
-}
-
-@keyframes icon-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
-@keyframes card-shine {
-  0% { transform: translateX(-200%) rotate(25deg); }
-  100% { transform: translateX(200%) rotate(25deg); }
-}
-
-@keyframes card-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(32px) scale(0.95) rotateX(6deg);
-    filter: blur(4px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1) rotateX(0deg);
-    filter: blur(0);
-  }
-}
-
-@keyframes subtle-pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
+/* ── Feature Cards ── */
 .feature-card {
-  --angle: 0deg;
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.8));
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(226, 232, 240, 0.6);
-  transition:
-    transform 0.45s cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 0.45s cubic-bezier(0.23, 1, 0.32, 1),
-    border-color 0.4s ease;
-  perspective: 800px;
-  transform-style: preserve-3d;
-  will-change: transform;
-  animation: card-enter 0.8s cubic-bezier(0.23, 1, 0.32, 1) both;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .dark .feature-card {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.7));
-  border-color: rgba(51, 65, 85, 0.5);
+  background: #111827;
+  border-color: #334155;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
-/* Animated gradient border overlay */
-.feature-card::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  background: conic-gradient(
-    from var(--angle),
-    transparent 40%,
-    rgba(220, 38, 38, 0.5) 50%,
-    rgba(37, 99, 235, 0.5) 55%,
-    transparent 65%
-  );
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  -webkit-mask-composite: xor;
-  padding: 1px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  animation: border-spin 4s linear infinite;
-}
-
-/* Shine sweep */
-.feature-card::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 50%;
-  height: 200%;
-  background: linear-gradient(
-    120deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.12) 45%,
-    rgba(255, 255, 255, 0.25) 50%,
-    rgba(255, 255, 255, 0.12) 55%,
-    transparent 70%
-  );
-  transform: translateX(-200%) rotate(25deg);
-  pointer-events: none;
-  transition: none;
-}
-
-/* Spotlight blob that follows hover origin */
-.feature-card .card-spotlight {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.45s ease;
-  background: radial-gradient(
-    350px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(220, 38, 38, 0.08),
-    transparent 60%
-  );
-}
-
-.dark .feature-card .card-spotlight {
-  background: radial-gradient(
-    350px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-    rgba(59, 130, 246, 0.12),
-    transparent 60%
-  );
-}
-
-/* Icon breathing */
-.feature-card .card-icon-wrap {
-  transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-/* ── Hover states ── */
 .feature-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow:
-    0 24px 48px rgba(15, 23, 42, 0.14),
-    0 4px 12px rgba(15, 23, 42, 0.05);
-  border-color: transparent;
+  transform: translateY(-4px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.15);
 }
 
-.dark .feature-card:hover {
-  box-shadow:
-    0 24px 48px rgba(0, 0, 0, 0.4),
-    0 4px 12px rgba(0, 0, 0, 0.2);
+.feature-card::before,
+.feature-card::after,
+.feature-card .card-spotlight {
+  display: none;
 }
 
-.feature-card:hover::before {
-  opacity: 1;
-}
-
-.feature-card:hover::after {
-  animation: card-shine 0.8s ease forwards;
-}
-
-.feature-card:hover .card-spotlight {
-  opacity: 1;
-}
-
-.feature-card:hover .card-icon-wrap {
-  animation: icon-breathe 1.8s ease-in-out infinite;
-}
-
-/* Stagger entry per card */
-.feature-card:nth-child(1) { animation-delay: 0.05s; }
-.feature-card:nth-child(2) { animation-delay: 0.12s; }
-.feature-card:nth-child(3) { animation-delay: 0.19s; }
-.feature-card:nth-child(4) { animation-delay: 0.26s; }
-.feature-card:nth-child(5) { animation-delay: 0.33s; }
-.feature-card:nth-child(6) { animation-delay: 0.40s; }
-
-/* Subtle bottom accent line */
 .feature-card .card-accent {
   position: absolute;
   bottom: 0;
@@ -514,12 +207,6 @@ body {
   width: 80%;
   height: 2px;
   border-radius: 2px;
-  background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.5), rgba(37, 99, 235, 0.5), transparent);
-  opacity: 0;
-  transition: opacity 0.45s ease;
-  animation: subtle-pulse 3s ease-in-out infinite;
-}
-
-.feature-card:hover .card-accent {
-  opacity: 1;
+  background: linear-gradient(90deg, transparent, rgba(24, 119, 242, 0.5), transparent);
+  opacity: 0.6;
 }

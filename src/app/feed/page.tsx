@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Post, PostCategory } from '@/lib/types';
 import PostCard from '@/components/PostCard';
@@ -20,8 +20,30 @@ export default function FeedPage() {
   const [sort, setSort] = useState<SortMode>('latest');
   const [hasMore, setHasMore] = useState(true);
 
+  const insertBufferRef = useRef<Post[]>([]);
+  const insertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const supabase = createClient();
   const POSTS_PER_PAGE = 15;
+
+  const attachDislikeFlags = async (items: Post[]) => {
+    if (!user || items.length === 0) return items;
+
+    const postIds = items.map((post) => post.id);
+    const { data, error } = await supabase
+      .from('dislikes')
+      .select('post_id')
+      .eq('user_id', user.id)
+      .in('post_id', postIds);
+
+    if (error || !data) return items;
+
+    const dislikedIds = new Set(data.map((row) => row.post_id));
+    return items.map((post) => ({
+      ...post,
+      user_has_disliked: dislikedIds.has(post.id),
+    }));
+  };
 
   const fetchPosts = async (isLoadMore = false) => {
     try {
@@ -50,16 +72,14 @@ export default function FeedPage() {
         author: Array.isArray(post.author) ? post.author[0] : post.author,
       })) as Post[];
 
+      const hydratedData = await attachDislikeFlags(normalizedData);
+
       if (error) {
         console.error('Failed to fetch posts:', error.message);
         setHasMore(false);
       } else {
-        if (isLoadMore) {
-          setPosts([...posts, ...normalizedData]);
-        } else {
-          setPosts(normalizedData);
-        }
-        setHasMore(normalizedData.length >= POSTS_PER_PAGE);
+        setPosts((prev) => (isLoadMore ? [...prev, ...hydratedData] : hydratedData));
+        setHasMore(hydratedData.length >= POSTS_PER_PAGE);
       }
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -75,6 +95,60 @@ export default function FeedPage() {
     fetchPosts(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, sort]);
+
+  useEffect(() => {
+    if (sort !== 'latest') return;
+
+    const channel = supabase
+      .channel('feed-posts-insert')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        (payload) => {
+          const newPost = payload.new as Post;
+
+          if (category !== 'all' && newPost.category !== category) return;
+
+          insertBufferRef.current.push(newPost);
+
+          if (insertTimerRef.current) return;
+          insertTimerRef.current = setTimeout(async () => {
+            const buffer = [...insertBufferRef.current];
+            insertBufferRef.current = [];
+            insertTimerRef.current = null;
+
+            if (buffer.length === 0) return;
+
+            const authorIds = [...new Set(buffer.map((post) => post.author_id))];
+            const { data: authors } = await supabase
+              .from('profiles')
+              .select('*')
+              .in('id', authorIds);
+
+            const authorMap = new Map((authors || []).map((author) => [author.id, author]));
+            const hydrated = buffer.map((post) => ({
+              ...post,
+              author: authorMap.get(post.author_id),
+              user_has_disliked: false,
+            }));
+
+            setPosts((prev) => {
+              const existingIds = new Set(prev.map((post) => post.id));
+              const additions = hydrated.filter((post) => !existingIds.has(post.id));
+              return additions.length ? [...additions, ...prev] : prev;
+            });
+          }, 400);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (insertTimerRef.current) {
+        clearTimeout(insertTimerRef.current);
+      }
+      supabase.removeChannel(channel);
+    };
+  }, [category, sort, supabase]);
 
   return (
     <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a]">

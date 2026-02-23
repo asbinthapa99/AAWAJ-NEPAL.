@@ -39,6 +39,7 @@ export interface Post {
   comments_count: number;
   created_at: string;
   author?: Profile;
+  user_has_disliked?: boolean;
 }
 
 export interface Comment {
