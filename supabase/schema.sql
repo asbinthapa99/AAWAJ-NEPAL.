@@ -193,14 +193,29 @@ CREATE TRIGGER on_comment_removed
 -- ============================================================
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  v_username TEXT;
 BEGIN
-  INSERT INTO profiles (id, username, full_name, avatar_url)
+  -- Use provided username or generate unique one
+  v_username := COALESCE(
+    NULLIF(NEW.raw_user_meta_data->>'username', ''),
+    'user_' || SUBSTR(NEW.id::TEXT, 1, 8)
+  );
+  
+  INSERT INTO profiles (id, username, full_name, avatar_url, district)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
-    NEW.raw_user_meta_data->>'avatar_url'
+    v_username,
+    COALESCE(
+      NULLIF(NEW.raw_user_meta_data->>'full_name', ''),
+      split_part(NEW.email, '@', 1)
+    ),
+    NEW.raw_user_meta_data->>'avatar_url',
+    NEW.raw_user_meta_data->>'district'
   );
+  RETURN NEW;
+EXCEPTION WHEN others THEN
+  RAISE LOG 'Error creating profile for user %: %', NEW.id, SQLERRM;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
