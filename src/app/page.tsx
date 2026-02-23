@@ -10,17 +10,29 @@ import { Megaphone, TrendingUp, Clock, Loader2, PlusCircle } from 'lucide-react'
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import NepalFlag from '@/components/NepalFlag3D';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 type SortMode = 'latest' | 'trending';
 
-export default function Home() {
+function HomeContent() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<PostCategory | 'all'>('all');
   const [sort, setSort] = useState<SortMode>('latest');
 
   const supabase = createClient();
+
+  // Handle OAuth code landing on root page (Supabase fallback when redirectTo isn't whitelisted)
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      router.replace(`/auth/callback?code=${code}`);
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     fetchPosts();
@@ -162,5 +174,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   );
 }
