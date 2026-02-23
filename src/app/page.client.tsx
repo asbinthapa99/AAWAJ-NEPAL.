@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import NepalFlag from '@/components/NepalFlag3D';
 import PostCard from '@/components/PostCard';
+import { CryptoDashboard } from '@/components/CryptoDashboard';
 import { APP_NAME, APP_NAME_NP } from '@/lib/constants';
 import { Post, News } from '@/lib/types';
 import {
@@ -60,7 +61,9 @@ function getContent(lang: 'en' | 'np') {
       goldLastUpdated: 'अन्तिम अपडेट',
       goldError: 'हाल सुन/चाँदीको दर ल्याउन सकेनौं।',
       marketDashboardTitle: 'लाइभ बाजार मूल्य',
-      marketDashboardSubtitle: 'क्रिप्टो र स्टक — रियल-टाइम',
+      marketDashboardSubtitle: 'क्रिप्टोकरेन्सी दरहरु — रियल-टाइम',
+      stockChartsTitle: 'स्टक चार्ट',
+      stockChartsSubtitle: 'वास्तविक समय मूल्य चार्ट — NVIDIA, Google, Tesla',
       marketDisclaimer: '⚠️ कानूनी सूचना: यो जानकारी शैक्षिक र सूचनात्मक उद्देश्यको लागि मात्र हो। यो निवेश सल्लाह, वित्तीय सल्लाह वा कानूनी सल्लाह होइन। दर विलम्बित हुन सक्छन्। क्रिप्टो र स्टक बजार उच्च जोखिमको हुन्छ। निवेश गर्नु पहिले लाइसेन्स प्राप्त वित्तीय सलाहदाता, निवेश पेशेवर र वकिलको परामर्श लिनुहोस्। आवाज नेपाल यस जानकारीमा निर्भर गरेर भएको हानिको लागि कुनै उत्तरदायित्व लिंदैन। यो डेटा हेरेर तपाई सबै जोखिम मान्न सहमत हुनुहुन्छ।',
       marketError: 'बाजार डेटा लोड गर्न सकेन।',
       marketUpdated: 'अपडेट',
@@ -183,7 +186,9 @@ function getContent(lang: 'en' | 'np') {
     goldLastUpdated: 'Last updated',
     goldError: 'Unable to fetch gold/silver prices right now.',
     marketDashboardTitle: 'Live Market Prices',
-    marketDashboardSubtitle: 'Crypto & Stocks — Real-time',
+    marketDashboardSubtitle: 'Cryptocurrency prices — Real-time',
+    stockChartsTitle: 'Stock Charts',
+    stockChartsSubtitle: 'Real-time price charts — NVIDIA, Google, Tesla',
     marketDisclaimer: '⚠️ LEGAL DISCLAIMER: This information is for educational and informational purposes only. NOT investment advice, NOT financial advice, and NOT legal advice. Prices may be delayed. Crypto and stock markets carry significant risk. Consult a licensed financial advisor, investment professional, and lawyer before making any investment or trading decisions. Awaaz Nepal assumes no liability for losses resulting from reliance on this information. By viewing this data, you agree to assume all associated risks.',
     marketError: 'Unable to load market data.',
     marketUpdated: 'Updated',
@@ -327,16 +332,10 @@ export default function HomeClient() {
   const [newsLink, setNewsLink] = useState('');
   const [newsError, setNewsError] = useState('');
   const [newsSaving, setNewsSaving] = useState(false);
-
   const [goldItems, setGoldItems] = useState<{ id: number; label: string; value: string }[]>([]);
   const [goldUpdatedAt, setGoldUpdatedAt] = useState<string>('');
   const [goldLoading, setGoldLoading] = useState(true);
   const [goldError, setGoldError] = useState('');
-
-  const [marketItems, setMarketItems] = useState<any[]>([]);
-  const [marketLoading, setMarketLoading] = useState(true);
-  const [marketError, setMarketError] = useState('');
-  const [marketUpdatedAt, setMarketUpdatedAt] = useState<string>('');
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -404,42 +403,6 @@ export default function HomeClient() {
       clearInterval(interval);
     };
   }, [content.goldError]);
-
-  useEffect(() => {
-    let active = true;
-
-    const fetchMarketPrice = async () => {
-      setMarketLoading(true);
-      setMarketError('');
-      try {
-        const response = await fetch('/api/market-price');
-        if (!response.ok) {
-          throw new Error('Request failed');
-        }
-        const data = await response.json();
-        if (!active) return;
-        // Show both cryptos and stocks
-        const allItems = [...(data.cryptos || []), ...(data.stocks || [])];
-        setMarketItems(allItems);
-        setMarketUpdatedAt(data?.updated_at ?? '');
-      } catch (error) {
-        if (!active) return;
-        setMarketError(content.marketError);
-        setMarketItems([]);
-      } finally {
-        if (!active) return;
-        setMarketLoading(false);
-      }
-    };
-
-    fetchMarketPrice();
-    const interval = setInterval(fetchMarketPrice, 30 * 1000); // 30 seconds
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
-  }, [content.marketError]);
 
   const handleCreateNews = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -742,75 +705,8 @@ export default function HomeClient() {
 
 
 
-        {/* Market Dashboard */}
-        <section className="mb-16 section-reveal">
-          <div className="rounded-3xl border border-gray-200 dark:border-gray-800 bg-white/85 dark:bg-gray-900/70 p-6 sm:p-8 shadow-sm card-glow">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">{content.marketDashboardTitle}</h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{content.marketDashboardSubtitle}</p>
-              </div>
-              {marketUpdatedAt && (
-                <div className="text-xs text-gray-400 dark:text-gray-500">
-                  {content.marketUpdated}: {marketUpdatedAt}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              {marketLoading ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 py-8">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading market data...
-                </div>
-              ) : marketError ? (
-                <div className="text-sm text-red-500 py-8">{marketError}</div>
-              ) : marketItems.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400 py-8">No market data available.</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {marketItems.map((item, idx) => {
-                    const isPositive = (item.change ?? 0) >= 0;
-                    return (
-                      <div
-                        key={idx}
-                        className="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/50 px-4 py-5 hover-float transition-all hover:border-gray-300 dark:hover:border-gray-700"
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{item.symbol}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{item.name}</div>
-                          </div>
-                          <div className={`text-2xl ${isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                            {item.icon || '📊'}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-xl font-bold text-gray-900 dark:text-white">
-                            ${item.price?.toFixed(2) || '--'}
-                          </div>
-                          <div
-                            className={`inline-block px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                              isPositive
-                                ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
-                                : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
-                            }`}
-                          >
-                            {isPositive ? '+' : ''}{item.change?.toFixed(2)}%
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Disclaimer for Market Data */}
-            <div className="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 p-3 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-              {content.marketDisclaimer}
-            </div>
-          </div>
-        </section>
+        {/* Crypto & Stock Dashboard - TradingView */}
+        <CryptoDashboard />
 
         {/* Top Posts */}
         <section className="mb-16 section-reveal-delay-1">
