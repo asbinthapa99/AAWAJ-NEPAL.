@@ -6,6 +6,8 @@ import { Lock, Eye, EyeOff, Loader2, Megaphone, CheckCircle } from 'lucide-react
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic';
+
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
