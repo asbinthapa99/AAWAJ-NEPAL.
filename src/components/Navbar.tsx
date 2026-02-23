@@ -21,6 +21,27 @@ export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [language, setLanguage] = useState<'en' | 'np'>('en');
+  const labels = language === 'np'
+    ? {
+        feed: 'फिड',
+        raiseVoice: 'आवाज उठाउनुहोस्',
+        signIn: 'लगइन',
+        homeFeed: 'होम फिड',
+        myProfile: 'मेरो प्रोफाइल',
+        signOut: 'साइन आउट',
+        searchPlaceholder: 'समस्या खोज्नुहोस्...',
+        titleHome: 'होम',
+      }
+    : {
+        feed: 'Feed',
+        raiseVoice: 'Raise Voice',
+        signIn: 'Sign In',
+        homeFeed: 'Home Feed',
+        myProfile: 'My Profile',
+        signOut: 'Sign Out',
+        searchPlaceholder: 'Search problems...',
+        titleHome: 'Home',
+      };
 
   useEffect(() => {
     const stored = localStorage.getItem('awaaz-lang');
@@ -35,6 +56,7 @@ export default function Navbar() {
     setLanguage(next);
     localStorage.setItem('awaaz-lang', next);
     document.documentElement.lang = next === 'np' ? 'ne' : 'en';
+    window.dispatchEvent(new Event('language-change'));
   };
 
   return (
@@ -62,7 +84,7 @@ export default function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search problems..."
+                placeholder={labels.searchPlaceholder}
                 className="w-full pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 dark:focus:border-blue-400 rounded-xl outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500"
               />
             </div>
@@ -73,7 +95,7 @@ export default function Navbar() {
             <Link
               href="/"
               className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              title="Home"
+              title={labels.titleHome}
             >
               <Home className="w-5 h-5" />
             </Link>
@@ -82,7 +104,7 @@ export default function Navbar() {
               href="/feed"
               className="px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
             >
-              Feed
+              {labels.feed}
             </Link>
 
             {user && (
@@ -91,7 +113,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-red-500/20"
               >
                 <PlusCircle className="w-4 h-4" />
-                <span>Raise Voice</span>
+                <span>{labels.raiseVoice}</span>
               </Link>
             )}
 
@@ -129,7 +151,7 @@ export default function Navbar() {
                 className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Sign In</span>
+                <span>{labels.signIn}</span>
               </Link>
             )}
           </div>
@@ -165,7 +187,7 @@ export default function Navbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search problems..."
+                placeholder={labels.searchPlaceholder}
                 className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 rounded-xl outline-none text-gray-900 dark:text-white placeholder-gray-500"
               />
             </div>
@@ -176,7 +198,7 @@ export default function Navbar() {
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
             >
               <Home className="w-5 h-5" />
-              <span>Home Feed</span>
+              <span>{labels.homeFeed}</span>
             </Link>
 
             {user ? (
@@ -187,7 +209,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-blue-600 text-white font-semibold"
                 >
                   <PlusCircle className="w-5 h-5" />
-                  <span>Raise Your Voice</span>
+                  <span>{labels.raiseVoice}</span>
                 </Link>
 
                 <Link
@@ -196,7 +218,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
                 >
                   <User className="w-5 h-5" />
-                  <span>My Profile</span>
+                  <span>{labels.myProfile}</span>
                 </Link>
 
                 <button
@@ -207,7 +229,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400 w-full text-left"
                 >
                   <LogOut className="w-5 h-5" />
-                  <span>Sign Out</span>
+                  <span>{labels.signOut}</span>
                 </button>
               </>
             ) : (
@@ -217,7 +239,7 @@ export default function Navbar() {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold"
               >
                 <LogIn className="w-5 h-5" />
-                <span>Sign In</span>
+                <span>{labels.signIn}</span>
               </Link>
             )}
           </div>

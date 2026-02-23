@@ -9,6 +9,7 @@
 ## Table of Contents
 
 - [Overview](#overview)
+- [Project Type](#project-type)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
@@ -16,6 +17,7 @@
 - [Environment Variables](#environment-variables)
 - [Database Schema](#database-schema)
 - [Security](#security)
+- [API Routes](#api-routes)
 - [Project Structure](#project-structure)
 - [Deployment](#deployment)
 - [Contributing](#contributing)
@@ -25,6 +27,10 @@
 ## Overview
 
 Awaaz Nepal is a full-stack web application that empowers Nepali citizens to report civic issues — from infrastructure failures to governance concerns — and rally community support. Users create posts categorized by topic and urgency, support others' posts, comment, and report inappropriate content.
+
+## Project Type
+
+Full-stack civic engagement web app (community reporting + public accountability) built with Next.js App Router and Supabase.
 
 ## Features
 
@@ -41,6 +47,7 @@ Awaaz Nepal is a full-stack web application that empowers Nepali citizens to rep
 | **User Profiles** | Editable profile with name, bio, and district |
 | **Image Upload** | Upload images (JPEG/PNG/GIF/WebP, max 5MB) to Supabase Storage |
 | **Dark/Light Theme** | System-aware theme toggle with manual override |
+| **Gold/Silver Rates** | Live Nepali market rates using Hamro Patro data |
 | **Category Filtering** | Filter feed by category |
 | **Responsive Design** | Mobile-first design with Tailwind CSS |
 
@@ -54,6 +61,7 @@ Awaaz Nepal is a full-stack web application that empowers Nepali citizens to rep
 | **Icons** | Lucide React |
 | **Backend** | [Supabase](https://supabase.com) (Auth, Postgres, Storage, RLS) |
 | **Auth** | Supabase Auth with `@supabase/ssr` |
+| **Market Data** | `hamro-patro-scraper` (gold/silver rates) |
 | **Deployment** | Vercel |
 
 ## Architecture
@@ -159,6 +167,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public API key |
 
 > The app will throw an error at startup if these are missing.
+
+## API Routes
+
+| Route | Purpose | Notes |
+|---|---|---|
+| `/api/gold-price` | Gold/silver market rates | Uses `hamro-patro-scraper` on the server |
 
 ## Database Schema
 
