@@ -542,10 +542,50 @@ export default function HomeClient() {
             <div>
               <p className="font-semibold text-gray-900 dark:text-white mb-2">Social</p>
               <div className="flex gap-3">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-icon">F</a>
-                <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="social-icon">X</a>
-                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="social-icon">Y</a>
-                <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="social-icon">T</a>
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="Facebook"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="X"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+                    <path d="M18.244 2H21l-6.53 7.46L22 22h-6.828l-5.35-6.99L3.8 22H1l6.98-8.07L2 2h6.93l4.83 6.29L18.244 2zm-1.197 18h1.53L7.08 4H5.46l11.587 16z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="YouTube"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+                    <path d="M23.5 6.19a3 3 0 0 0-2.12-2.12C19.64 3.5 12 3.5 12 3.5s-7.64 0-9.38.57A3 3 0 0 0 .5 6.19 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.81 3 3 0 0 0 2.12 2.12c1.74.57 9.38.57 9.38.57s7.64 0 9.38-.57a3 3 0 0 0 2.12-2.12A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.81ZM9.75 15.5v-7l6 3.5-6 3.5Z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://tiktok.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="social-icon"
+                  aria-label="TikTok"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor" aria-hidden>
+                    <path d="M19.321 5.562a5.8 5.8 0 0 1-3.543-1.203V15.4a4.6 4.6 0 1 1-3.784-4.52v2.56a2.2 2.2 0 1 0 1.584 2.1V0h2.2a5.78 5.78 0 0 0 3.543 3.49v2.072Z" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>

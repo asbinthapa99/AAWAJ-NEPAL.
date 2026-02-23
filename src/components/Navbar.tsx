@@ -15,11 +15,27 @@ import {
   Home,
   Search,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [language, setLanguage] = useState<'en' | 'np'>('en');
+
+  useEffect(() => {
+    const stored = localStorage.getItem('awaaz-lang');
+    if (stored === 'np' || stored === 'en') {
+      setLanguage(stored);
+      document.documentElement.lang = stored === 'np' ? 'ne' : 'en';
+    }
+  }, []);
+
+  const toggleLanguage = () => {
+    const next = language === 'en' ? 'np' : 'en';
+    setLanguage(next);
+    localStorage.setItem('awaaz-lang', next);
+    document.documentElement.lang = next === 'np' ? 'ne' : 'en';
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
@@ -79,6 +95,14 @@ export default function Navbar() {
               </Link>
             )}
 
+            <button
+              onClick={toggleLanguage}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title="Toggle language"
+            >
+              {language === 'en' ? 'EN' : 'NP'}
+            </button>
+
             <ThemeToggle />
 
             {user ? (
@@ -112,6 +136,13 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={toggleLanguage}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title="Toggle language"
+            >
+              {language === 'en' ? 'EN' : 'NP'}
+            </button>
             <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
