@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Profile } from '@/lib/types';
 import type { User } from '@supabase/supabase-js';
@@ -31,27 +31,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    setProfile(data);
-  };
+  // Fetch profile with retry — OAuth profile may be created asynchronously in the callback
+  const fetchProfile = useCallback(async (currentUser: User, retries = 5): Promise<Profile | null> => {
+    for (let i = 0; i < retries; i++) {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (data) {
+        setProfile(data);
+        return data;
+      }
+
+      // If profile not found and this is an OAuth user, create it client-side as fallback
+      if (i === 1) {
+        const meta = currentUser.user_metadata ?? {};
+        const baseUsername =
+          meta.user_name ||
+          meta.preferred_username ||
+          (meta.full_name
+            ? meta.full_name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+            : 'user');
+        const username = `${baseUsername}_${Math.random().toString(36).substring(2, 8)}`;
+
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: currentUser.id,
+            username,
+            email: currentUser.email ?? '',
+            full_name: meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'User',
+            avatar_url: meta.avatar_url || meta.picture || null,
+            district: null,
+          }, { onConflict: 'id' });
+
+        if (!upsertError) {
+          // Re-fetch the newly created profile
+          const { data: newProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          if (newProfile) {
+            setProfile(newProfile);
+            return newProfile;
+          }
+        }
+      }
+
+      // Wait before retrying — profile may still be propagating from the auth callback
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
+
+    setProfile(null);
+    return null;
+  }, [supabase]);
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.id);
+      await fetchProfile(user);
     }
   };
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      if (user) {
-        await fetchProfile(user.id);
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      setUser(currentUser);
+      if (currentUser) {
+        await fetchProfile(currentUser);
       }
       setLoading(false);
     };
@@ -60,9 +109,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          await fetchProfile(currentUser);
         } else {
           setProfile(null);
         }

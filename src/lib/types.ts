@@ -1,6 +1,7 @@
 export interface Profile {
   id: string;
   username: string;
+  email?: string;
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
@@ -9,14 +10,15 @@ export interface Profile {
 }
 
 export type PostCategory =
-  | 'politics'
+  | 'infrastructure'
   | 'education'
   | 'health'
-  | 'infrastructure'
   | 'environment'
-  | 'economy'
+  | 'governance'
+  | 'safety'
+  | 'employment'
   | 'social'
-  | 'corruption'
+  | 'culture'
   | 'technology'
   | 'other';
 

@@ -2,7 +2,7 @@
 
 **Voice of Nepali Youth** — A civic engagement platform for Nepali youth to raise their voices about problems affecting Nepal.
 
-> Live: [https://aawaj-nepal-moii.vercel.app](https://aawaj-nepal-moii.vercel.app)
+> Live: [https://aawaj-nepal.vercel.app](https://aawaj-nepal.vercel.app)
 
 ---
 

@@ -56,7 +56,7 @@ function ResetPasswordContent() {
     } else {
       setSuccess(true);
       setTimeout(() => {
-        router.push('/');
+        router.push('/feed');
         router.refresh();
       }, 2000);
     }

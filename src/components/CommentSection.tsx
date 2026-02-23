@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Comment } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthProvider';
@@ -108,9 +109,9 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         </form>
       ) : (
         <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl p-3 text-center">
-          <a href="/auth/login" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+          <Link href="/auth/login" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
             Sign in
-          </a>{' '}
+          </Link>{' '}
           to comment
         </p>
       )}
@@ -131,14 +132,18 @@ export default function CommentSection({ postId }: CommentSectionProps) {
               key={comment.id}
               className="flex gap-3 group"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold">
-                {comment.author?.full_name?.[0]?.toUpperCase() || 'U'}
-              </div>
+              <Link href={`/profile/${comment.author_id}`}>
+                <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold hover:opacity-80 transition-opacity cursor-pointer">
+                  {comment.author?.full_name?.[0]?.toUpperCase() || 'U'}
+                </div>
+              </Link>
               <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {comment.author?.full_name || 'Anonymous'}
-                  </span>
+                  <Link href={`/profile/${comment.author_id}`}>
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors">
+                      {comment.author?.full_name || 'Anonymous'}
+                    </span>
+                  </Link>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-gray-400">
                       {timeAgo(comment.created_at)}

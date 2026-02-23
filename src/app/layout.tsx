@@ -124,7 +124,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white min-h-screen`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#f0f2f5] dark:bg-[#18191a] text-[#1c1e21] dark:text-[#e4e6eb] min-h-screen`}
       >
         <ThemeProvider>
           <AuthProvider>

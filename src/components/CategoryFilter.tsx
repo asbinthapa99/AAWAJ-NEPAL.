@@ -10,13 +10,13 @@ interface CategoryFilterProps {
 
 export default function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
       <button
         onClick={() => onChange('all')}
-        className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+        className={`flex-shrink-0 px-3.5 py-2 rounded-full text-[13px] font-semibold transition-colors ${
           selected === 'all'
-            ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            ? 'bg-[#e7f3ff] dark:bg-[#263951] text-[#1877F2]'
+            : 'bg-[#f0f2f5] dark:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50]'
         }`}
       >
         🔥 All
@@ -25,10 +25,10 @@ export default function CategoryFilter({ selected, onChange }: CategoryFilterPro
         <button
           key={cat.id}
           onClick={() => onChange(cat.id)}
-          className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5 ${
+          className={`flex-shrink-0 px-3.5 py-2 rounded-full text-[13px] font-semibold transition-colors flex items-center gap-1 ${
             selected === cat.id
-              ? `${cat.bgColor} ${cat.color} ring-2 ring-current/20`
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              ? 'bg-[#e7f3ff] dark:bg-[#263951] text-[#1877F2]'
+              : 'bg-[#f0f2f5] dark:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50]'
           }`}
         >
           <span>{cat.icon}</span>

@@ -72,9 +72,9 @@ supabase/auth-config.md
    - Choose: Enable email confirmations (YES for production, NO for testing)
    
 6. Under "URL Configuration":
-   - Site URL: `https://aawaj-nepal-moii.vercel.app` (your domain)
+   - Site URL: `https://aawaj-nepal.vercel.app` (your domain)
    - Add Redirect URLs:
-     - `https://aawaj-nepal-moii.vercel.app/**`
+     - `https://aawaj-nepal.vercel.app/**`
      - `http://localhost:3000/**`
 
 ---

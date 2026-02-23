@@ -15,95 +15,155 @@ export default function FeedPage() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [category, setCategory] = useState<PostCategory | 'all'>('all');
   const [sort, setSort] = useState<SortMode>('latest');
+  const [hasMore, setHasMore] = useState(true);
 
   const supabase = createClient();
+  const POSTS_PER_PAGE = 15;
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      let query = supabase.from('posts').select('*, author:profiles(*)');
+  const fetchPosts = async (isLoadMore = false) => {
+    try {
+      if (!isLoadMore) setLoading(true);
+      else setLoadingMore(true);
+
+      let query = supabase
+        .from('posts')
+        .select('id, title, content, category, urgency, district, supports_count, dislikes_count, comments_count, created_at, author_id, voice_url, image_url, author:profiles(id, full_name, username, avatar_url)');
+
       if (category !== 'all') query = query.eq('category', category);
+
       if (sort === 'trending') {
         query = query.order('supports_count', { ascending: false });
       } else {
         query = query.order('created_at', { ascending: false });
       }
-      query = query.limit(50);
+
+      const offset = isLoadMore ? posts.length : 0;
+      query = query.range(offset, offset + POSTS_PER_PAGE - 1);
+
       const { data, error } = await query;
-      if (error) console.error('Failed to fetch posts:', error.message);
-      setPosts(data || []);
+
+      const normalizedData = (data || []).map((post: Record<string, unknown>) => ({
+        ...post,
+        author: Array.isArray(post.author) ? post.author[0] : post.author,
+      })) as Post[];
+
+      if (error) {
+        console.error('Failed to fetch posts:', error.message);
+        setHasMore(false);
+      } else {
+        if (isLoadMore) {
+          setPosts([...posts, ...normalizedData]);
+        } else {
+          setPosts(normalizedData);
+        }
+        setHasMore(normalizedData.length >= POSTS_PER_PAGE);
+      }
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setHasMore(false);
+    } finally {
       setLoading(false);
-    };
-    fetchPosts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    setPosts([]);
+    fetchPosts(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category, sort]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">All Issues</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Problems raised by citizens across Nepal</p>
-      </div>
+    <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a]">
+      <div className="max-w-[680px] mx-auto px-4 py-6">
+        {/* Page Header */}
+        <div className="bg-white dark:bg-[#242526] rounded-lg shadow-sm p-4 mb-4">
+          <h1 className="text-[20px] font-bold text-gray-900 dark:text-[#e4e6eb]">Public Feed</h1>
+          <p className="text-[13px] text-gray-500 dark:text-[#b0b3b8] mt-0.5">Voices raised by citizens across Nepal</p>
 
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSort('latest')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              sort === 'latest'
-                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            Latest
-          </button>
-          <button
-            onClick={() => setSort('trending')}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              sort === 'trending'
-                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-lg'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            Trending
-          </button>
-        </div>
-        <CategoryFilter selected={category} onChange={setCategory} />
-      </div>
-
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-3" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Loading problems...</p>
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
-          <Megaphone className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No problems posted yet</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-4">
-            Be the first to raise your voice about an issue affecting Nepal.
-          </p>
-          {user && (
-            <Link
-              href="/post/create"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+          {/* Sort Tabs */}
+          <div className="flex mt-3 pt-3 border-t border-gray-200 dark:border-[#393a3b]">
+            <button
+              onClick={() => setSort('latest')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                sort === 'latest'
+                  ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951]'
+                  : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+              }`}
             >
-              <PlusCircle className="w-4 h-4" />
-              Create First Post
-            </Link>
-          )}
+              <Clock className="w-5 h-5" />
+              Latest
+            </button>
+            <button
+              onClick={() => setSort('trending')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                sort === 'trending'
+                  ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951]'
+                  : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+              }`}
+            >
+              <TrendingUp className="w-5 h-5" />
+              Trending
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
+
+        {/* Category Filter */}
+        <div className="mb-4">
+          <CategoryFilter selected={category} onChange={setCategory} />
         </div>
-      )}
+
+        {/* Posts */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin text-[#1877F2] mb-3" />
+            <p className="text-sm text-gray-500 dark:text-[#b0b3b8]">Loading...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16 bg-white dark:bg-[#242526] rounded-lg shadow-sm">
+            <Megaphone className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-900 dark:text-[#e4e6eb] mb-2">No posts yet</h3>
+            <p className="text-sm text-gray-500 dark:text-[#b0b3b8] max-w-sm mx-auto mb-4">
+              Be the first to raise your voice about an issue affecting Nepal.
+            </p>
+            {user && (
+              <Link
+                href="/post/create"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors"
+              >
+                <PlusCircle className="w-4 h-4" />
+                Create Post
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+
+            {hasMore && (
+              <button
+                onClick={() => fetchPosts(true)}
+                disabled={loadingMore}
+                className="w-full py-3 rounded-lg bg-white dark:bg-[#242526] shadow-sm text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  'See More'
+                )}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

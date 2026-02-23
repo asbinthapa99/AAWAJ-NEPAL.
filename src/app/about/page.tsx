@@ -24,13 +24,14 @@ const GITHUB_REPO = 'https://github.com/asbinthapa99/AAWAJ-NEPAL';
 
 export default function AboutPage() {
   return (
+    <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a]">
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-14">
       {/* Page Header */}
       <header className="text-center space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-[#e4e6eb]">
           About Awaaz Nepal
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 max-w-xl mx-auto text-sm sm:text-base">
+        <p className="text-gray-500 dark:text-[#b0b3b8] max-w-xl mx-auto text-sm sm:text-base">
           Everything you need to know about the platform — our mission, how to
           contribute, your rights, and the rules that keep this space safe.
         </p>
@@ -399,6 +400,7 @@ export default function AboutPage() {
           GitHub Repository
         </a>
       </footer>
+    </div>
     </div>
   );
 }

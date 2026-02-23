@@ -33,19 +33,19 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
-        <div className="text-center bg-white dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-800 max-w-md w-full">
-          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="text-center bg-white dark:bg-[#242526] rounded-lg p-8 shadow-lg max-w-md w-full">
+          <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-[#e4e6eb] mb-2">
             Check Your Email
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            We sent a password reset link to <strong className="text-gray-700 dark:text-gray-200">{email}</strong>. Click the link in the email to reset your password.
+          <p className="text-sm text-gray-500 dark:text-[#b0b3b8] mb-4">
+            We sent a password reset link to <strong className="text-gray-700 dark:text-[#e4e6eb]">{email}</strong>. Click the link in the email to reset your password.
           </p>
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Sign In
@@ -56,17 +56,17 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-red-500/20">
-            <Megaphone className="w-8 h-8 text-white" />
+        <div className="text-center mb-6">
+          <div className="w-14 h-14 bg-[#1877F2] rounded-full flex items-center justify-center mx-auto mb-3">
+            <Megaphone className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+          <h1 className="text-[28px] font-bold text-gray-900 dark:text-[#e4e6eb]">
             Forgot Password?
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-[15px] text-gray-500 dark:text-[#b0b3b8] mt-1">
             Enter your email and we&apos;ll send you a reset link
           </p>
         </div>
@@ -74,16 +74,16 @@ export default function ForgotPasswordPage() {
         {/* Form */}
         <form
           onSubmit={handleReset}
-          className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm space-y-4"
+          className="bg-white dark:bg-[#242526] rounded-lg p-5 shadow-lg space-y-4"
         >
           {error && (
-            <div className="px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl text-sm">
+            <div className="px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg text-sm">
               {error}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-[#e4e6eb] mb-1.5">
               Email Address
             </label>
             <div className="relative">
@@ -94,7 +94,7 @@ export default function ForgotPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500"
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#3a3b3c] border border-gray-300 dark:border-[#555] rounded-md text-[15px] outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500 dark:placeholder-[#b0b3b8] focus:border-[#1877F2] focus:ring-1 focus:ring-[#1877F2] transition-colors"
               />
             </div>
           </div>
@@ -102,17 +102,17 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+            className="w-full py-3 bg-[#1877F2] text-white rounded-md text-[17px] font-bold hover:bg-[#166FE5] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <Loader2 className="w-5 h-5 animate-spin" />}
             Send Reset Link
           </button>
 
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-center text-sm text-gray-500 dark:text-[#b0b3b8]">
             Remember your password?{' '}
             <Link
               href="/auth/login"
-              className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
+              className="text-[#1877F2] font-medium hover:underline"
             >
               Sign In
             </Link>

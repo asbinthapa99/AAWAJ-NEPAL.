@@ -266,12 +266,28 @@ CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   v_username TEXT;
+  v_base_username TEXT;
+  v_counter INTEGER := 0;
+  v_max_attempts INTEGER := 100;
 BEGIN
-  -- Use provided username or generate unique one
-  v_username := COALESCE(
+  -- Get base username from metadata or email
+  v_base_username := COALESCE(
     NULLIF(NEW.raw_user_meta_data->>'username', ''),
-    'user_' || SUBSTR(NEW.id::TEXT, 1, 8)
+    REGEXP_REPLACE(split_part(NEW.email, '@', 1), '[^a-z0-9_]', '', 'g')
   );
+  
+  -- If base username is empty, use user_ prefix
+  IF v_base_username = '' THEN
+    v_base_username := 'user';
+  END IF;
+  
+  v_username := v_base_username;
+  
+  -- Generate unique username by adding random suffix if needed
+  WHILE EXISTS(SELECT 1 FROM profiles WHERE username = v_username) AND v_counter < v_max_attempts LOOP
+    v_username := v_base_username || '_' || SUBSTR(MD5(RANDOM()::TEXT), 1, 6);
+    v_counter := v_counter + 1;
+  END LOOP;
   
   INSERT INTO profiles (id, username, email, full_name, avatar_url, district)
   VALUES (
@@ -280,9 +296,13 @@ BEGIN
     NEW.email,
     COALESCE(
       NULLIF(NEW.raw_user_meta_data->>'full_name', ''),
+      NEW.raw_user_meta_data->>'name',
       split_part(NEW.email, '@', 1)
     ),
-    NEW.raw_user_meta_data->>'avatar_url',
+    COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture'
+    ),
     NEW.raw_user_meta_data->>'district'
   );
   RETURN NEW;

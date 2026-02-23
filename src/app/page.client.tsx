@@ -327,11 +327,6 @@ export default function HomeClient() {
   const [loadingPosts, setLoadingPosts] = useState(true);
 
   const [news, setNews] = useState<News[]>([]);
-  const [newsTitle, setNewsTitle] = useState('');
-  const [newsBody, setNewsBody] = useState('');
-  const [newsLink, setNewsLink] = useState('');
-  const [newsError, setNewsError] = useState('');
-  const [newsSaving, setNewsSaving] = useState(false);
   const [goldItems, setGoldItems] = useState<{ id: number; label: string; value: string }[]>([]);
   const [goldUpdatedAt, setGoldUpdatedAt] = useState<string>('');
   const [goldLoading, setGoldLoading] = useState(true);
@@ -344,7 +339,15 @@ export default function HomeClient() {
     }
   }, [searchParams, router]);
 
+  // Redirect logged-in users to dashboard
   useEffect(() => {
+    if (user) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
+
+  useEffect(() => {
+    if (user) return; // Don't fetch data if user is logged in (will redirect)
     const fetchPosts = async () => {
       setLoadingPosts(true);
       const { data } = await supabase
@@ -368,9 +371,10 @@ export default function HomeClient() {
     fetchPosts();
     fetchNews();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (user) return; // Don't fetch data if user is logged in (will redirect)
     let active = true;
 
     const fetchGoldPrice = async () => {
@@ -402,48 +406,12 @@ export default function HomeClient() {
       active = false;
       clearInterval(interval);
     };
-  }, [content.goldError]);
+  }, [user, content.goldError]);
 
-  const handleCreateNews = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
-
-    if (!newsTitle.trim() || !newsBody.trim()) {
-      setNewsError('Title and summary are required.');
-      return;
-    }
-
-    setNewsSaving(true);
-    setNewsError('');
-
-    const { error } = await supabase.from('news').insert({
-      author_id: user.id,
-      title: newsTitle.trim(),
-      body: newsBody.trim(),
-      link: newsLink.trim() || null,
-    });
-
-    if (error) {
-      setNewsError(error.message);
-      setNewsSaving(false);
-      return;
-    }
-
-    setNewsTitle('');
-    setNewsBody('');
-    setNewsLink('');
-    setNewsSaving(false);
-
-    const { data } = await supabase
-      .from('news')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(6);
-    setNews(data || []);
-  };
+  // Don't render landing page for logged-in users
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="relative">
@@ -593,9 +561,6 @@ export default function HomeClient() {
               <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">{content.newsTitle}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{content.newsSubtitle}</p>
             </div>
-            <Link href="/feed" className="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">
-              {content.viewAll}
-            </Link>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -620,43 +585,26 @@ export default function HomeClient() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/85 dark:bg-gray-900/70 p-5 shadow-sm hover-float">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{content.postNews}</h3>
-              {!user ? (
-                <p className="text-xs text-gray-500 dark:text-gray-400">{content.postNewsHint}</p>
-              ) : (
-                <form onSubmit={handleCreateNews} className="space-y-3">
-                  {newsError && (
-                    <div className="text-xs text-red-600 dark:text-red-400">{newsError}</div>
-                  )}
-                  <input
-                    value={newsTitle}
-                    onChange={(e) => setNewsTitle(e.target.value)}
-                    placeholder={content.newsTitlePlaceholder}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 text-sm outline-none"
-                  />
-                  <textarea
-                    value={newsBody}
-                    onChange={(e) => setNewsBody(e.target.value)}
-                    placeholder={content.newsBodyPlaceholder}
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 text-sm outline-none resize-none"
-                  />
-                  <input
-                    value={newsLink}
-                    onChange={(e) => setNewsLink(e.target.value)}
-                    placeholder={content.newsLinkPlaceholder}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 text-sm outline-none"
-                  />
-                  <button
-                    type="submit"
-                    disabled={newsSaving}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-blue-600 text-white text-sm font-semibold disabled:opacity-60"
-                  >
-                    {newsSaving ? 'Posting...' : content.postNewsButton}
-                  </button>
-                </form>
-              )}
+            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-red-50 to-blue-50 dark:from-red-950/30 dark:to-blue-950/30 p-6 shadow-sm hover-float flex flex-col items-center justify-center text-center">
+              <Megaphone className="w-10 h-10 text-red-500 mb-3" />
+              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">Want to post news or raise an issue?</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 max-w-xs">
+                Create a free account to post news updates, raise civic problems, and support issues in your community.
+              </p>
+              <div className="flex gap-3">
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  {content.register}
+                </Link>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  {content.login}
+                </Link>
+              </div>
             </div>
           </div>
         </section>

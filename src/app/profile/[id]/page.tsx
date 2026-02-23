@@ -165,7 +165,7 @@ export default function ProfilePage({
           User not found
         </h2>
         <Link
-          href="/"
+          href="/feed"
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-semibold"
         >
           <ArrowLeft className="w-4 h-4" />

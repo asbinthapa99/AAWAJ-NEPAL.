@@ -75,15 +75,15 @@
 
 -- Path: Authentication > URL Configuration
 
--- Site URL: https://aawaj-nepal-moii.vercel.app
+-- Site URL: https://aawaj-nepal.vercel.app
 -- (or your production domain)
 
 -- Redirect URLs (add all these):
--- https://aawaj-nepal-moii.vercel.app/**
+-- https://aawaj-nepal.vercel.app/**
 -- http://localhost:3000/**
--- https://aawaj-nepal-moii.vercel.app/auth/callback
--- https://aawaj-nepal-moii.vercel.app/auth/reset-password
--- https://aawaj-nepal-moii.vercel.app/auth/verify-email
+-- https://aawaj-nepal.vercel.app/auth/callback
+-- https://aawaj-nepal.vercel.app/auth/reset-password
+-- https://aawaj-nepal.vercel.app/auth/verify-email
 
 -- ============================================================
 -- 4. SECURITY SETTINGS

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
@@ -41,6 +42,7 @@ export default function PostDetailPage({
 }) {
   const { id } = use(params);
   const { user } = useAuth();
+  const router = useRouter();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
@@ -105,7 +107,7 @@ export default function PostDetailPage({
           This post may have been removed or doesn&apos;t exist.
         </p>
         <Link
-          href="/"
+          href="/feed"
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-semibold"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -128,14 +130,26 @@ export default function PostDetailPage({
       return;
     }
 
-    window.location.href = '/feed';
+    router.push('/feed');
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/post/${post.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: post.title, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('Link copied!');
+    }
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
       {/* Back Button */}
       <Link
-        href="/"
+        href="/feed"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -226,7 +240,10 @@ export default function PostDetailPage({
               initialCount={post.dislikes_count}
               initialDisliked={userDisliked}
             />
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
               <Share2 className="w-4 h-4" />
               <span>Share</span>
             </button>

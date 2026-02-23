@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import ThemeToggle from './ThemeToggle';
-import { APP_NAME, APP_NAME_NP } from '@/lib/constants';
+import { APP_NAME } from '@/lib/constants';
 import {
   Megaphone,
   PlusCircle,
@@ -14,33 +14,37 @@ import {
   X,
   Home,
   Search,
+  Bell,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [language, setLanguage] = useState<'en' | 'np'>('en');
   const labels = language === 'np'
     ? {
         feed: 'फिड',
         raiseVoice: 'आवाज उठाउनुहोस्',
         signIn: 'लगइन',
-        homeFeed: 'होम फिड',
+        homeFeed: 'होम',
         myProfile: 'मेरो प्रोफाइल',
         signOut: 'साइन आउट',
-        searchPlaceholder: 'समस्या खोज्नुहोस्...',
+        searchPlaceholder: 'आवाज नेपालमा खोज्नुहोस्',
         titleHome: 'होम',
+        create: 'पोस्ट गर्नुहोस्',
       }
     : {
         feed: 'Feed',
         raiseVoice: 'Raise Voice',
-        signIn: 'Sign In',
-        homeFeed: 'Home Feed',
+        signIn: 'Log In',
+        homeFeed: 'Home',
         myProfile: 'My Profile',
-        signOut: 'Sign Out',
-        searchPlaceholder: 'Search problems...',
+        signOut: 'Log Out',
+        searchPlaceholder: 'Search Awaaz Nepal',
         titleHome: 'Home',
+        create: 'Create Post',
       };
 
   useEffect(() => {
@@ -59,187 +63,157 @@ export default function Navbar() {
     window.dispatchEvent(new Event('language-change'));
   };
 
-  return (
-    <nav className="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
-      <div className="max-w-5xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-red-500/25 transition-shadow">
-              <Megaphone className="w-5 h-5 text-white" />
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                {APP_NAME}
-              </h1>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight -mt-0.5">
-                {APP_NAME_NP}
-              </p>
-            </div>
-          </Link>
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handler = () => setProfileMenuOpen(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [profileMenuOpen]);
 
-          {/* Search bar (desktop) */}
-          <div className="hidden md:flex flex-1 max-w-md mx-6">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={labels.searchPlaceholder}
-                className="w-full pl-10 pr-4 py-2 text-sm bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 dark:focus:border-blue-400 rounded-xl outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500"
-              />
+  return (
+    <nav className="sticky top-0 z-50 bg-white dark:bg-[#242526] shadow-sm dark:shadow-none border-b border-gray-200 dark:border-[#393a3b]">
+      <div className="max-w-[1920px] mx-auto px-4">
+        <div className="flex items-center justify-between h-14">
+          {/* Left: Logo + Search */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-1.5">
+              <div className="w-10 h-10 bg-[#1877F2] rounded-full flex items-center justify-center shadow-sm">
+                <Megaphone className="w-5 h-5 text-white" />
+              </div>
+            </Link>
+            <div className="hidden md:flex">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <input
+                  type="text"
+                  placeholder={labels.searchPlaceholder}
+                  className="w-60 pl-10 pr-4 py-2 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] border-none rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500 dark:placeholder-[#b0b3b8] focus:ring-2 focus:ring-[#1877F2]/30 transition-all"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
+          {/* Center: Nav Icons */}
+          <div className="hidden md:flex items-center gap-2">
             <Link
-              href="/"
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              href={user ? '/dashboard' : '/feed'}
+              className="relative px-8 py-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
               title={labels.titleHome}
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-6 h-6 text-[#1877F2] mx-auto" />
+              <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-[#1877F2] rounded-t-full" />
             </Link>
-
-            <Link
-              href="/feed"
-              className="px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-            >
-              {labels.feed}
-            </Link>
-
             {user && (
               <Link
                 href="/post/create"
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-red-500/20"
+                className="relative px-8 py-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors group"
+                title={labels.create}
               >
-                <PlusCircle className="w-4 h-4" />
-                <span>{labels.raiseVoice}</span>
+                <PlusCircle className="w-6 h-6 text-gray-500 dark:text-[#b0b3b8] group-hover:text-[#1877F2] mx-auto transition-colors" />
               </Link>
             )}
+          </div>
 
+          {/* Right: Actions */}
+          <div className="hidden md:flex items-center gap-1">
+            {user && (
+              <button className="w-10 h-10 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center hover:bg-[#d8dadf] dark:hover:bg-[#4e4f50] transition-colors">
+                <Bell className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" />
+              </button>
+            )}
             <button
               onClick={toggleLanguage}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title="Toggle language"
+              className="w-10 h-10 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center hover:bg-[#d8dadf] dark:hover:bg-[#4e4f50] transition-colors text-xs font-bold text-gray-800 dark:text-[#e4e6eb]"
             >
-              {language === 'en' ? 'EN' : 'NP'}
+              {language === 'en' ? 'EN' : 'ने'}
             </button>
-
             <ThemeToggle />
-
             {user ? (
-              <div className="flex items-center gap-1">
-                <Link
-                  href={`/profile/${user.id}`}
-                  className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setProfileMenuOpen(!profileMenuOpen); }}
+                  className="flex items-center gap-1 ml-1"
                 >
-                  <div className="w-7 h-7 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-transparent hover:ring-[#1877F2]/30 transition-all">
                     {profile?.full_name?.[0]?.toUpperCase() || 'U'}
                   </div>
-                </Link>
-                <button
-                  onClick={signOut}
-                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
-                  title="Sign out"
-                >
-                  <LogOut className="w-5 h-5" />
                 </button>
+                {profileMenuOpen && (
+                  <div className="absolute right-0 top-12 w-72 bg-white dark:bg-[#242526] rounded-lg shadow-2xl border border-gray-200 dark:border-[#393a3b] overflow-hidden z-50">
+                    <div className="p-3">
+                      <Link
+                        href={`/profile/${user.id}`}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+                        onClick={() => setProfileMenuOpen(false)}
+                      >
+                        <div className="w-9 h-9 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          {profile?.full_name?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <p className="text-[15px] font-semibold text-gray-900 dark:text-[#e4e6eb]">{profile?.full_name || 'User'}</p>
+                          <p className="text-xs text-gray-500 dark:text-[#b0b3b8]">{labels.myProfile}</p>
+                        </div>
+                      </Link>
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-[#393a3b]" />
+                    <div className="p-2">
+                      <button
+                        onClick={() => { signOut(); setProfileMenuOpen(false); }}
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors text-left"
+                      >
+                        <div className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center">
+                          <LogOut className="w-4 h-4 text-gray-800 dark:text-[#e4e6eb]" />
+                        </div>
+                        <span className="text-[15px] font-medium text-gray-900 dark:text-[#e4e6eb]">{labels.signOut}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <Link
-                href="/auth/login"
-                className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
-              >
+              <Link href="/auth/login" className="flex items-center gap-2 px-5 py-2 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors">
                 <LogIn className="w-4 h-4" />
                 <span>{labels.signIn}</span>
               </Link>
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={toggleLanguage}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title="Toggle language"
-            >
-              {language === 'en' ? 'EN' : 'NP'}
+          {/* Mobile */}
+          <div className="flex md:hidden items-center gap-1">
+            <button onClick={toggleLanguage} className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center text-xs font-bold text-gray-800 dark:text-[#e4e6eb]">
+              {language === 'en' ? 'EN' : 'ने'}
             </button>
             <ThemeToggle />
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              ) : (
-                <Menu className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              )}
+            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center">
+              {mobileMenuOpen ? <X className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" /> : <Menu className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-gray-200 dark:border-gray-800 mt-2 pt-4 space-y-2">
-            {/* Mobile Search */}
-            <div className="relative mb-3">
+          <div className="md:hidden pb-3 pt-2 space-y-1">
+            <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder={labels.searchPlaceholder}
-                className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-100 dark:bg-gray-800 rounded-xl outline-none text-gray-900 dark:text-white placeholder-gray-500"
-              />
+              <input type="text" placeholder={labels.searchPlaceholder} className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500" />
             </div>
-
-            <Link
-              href="/"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-            >
-              <Home className="w-5 h-5" />
-              <span>{labels.homeFeed}</span>
+            <Link href={user ? '/dashboard' : '/feed'} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
+              <Home className="w-5 h-5 text-[#1877F2]" /><span className="text-[15px] font-medium">{labels.homeFeed}</span>
             </Link>
-
             {user ? (
               <>
-                <Link
-                  href="/post/create"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-blue-600 text-white font-semibold"
-                >
-                  <PlusCircle className="w-5 h-5" />
-                  <span>{labels.raiseVoice}</span>
+                <Link href="/post/create" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
+                  <PlusCircle className="w-5 h-5 text-[#42b72a]" /><span className="text-[15px] font-medium">{labels.create}</span>
                 </Link>
-
-                <Link
-                  href={`/profile/${user.id}`}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                >
-                  <User className="w-5 h-5" />
-                  <span>{labels.myProfile}</span>
+                <Link href={`/profile/${user.id}`} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
+                  <User className="w-5 h-5 text-[#1877F2]" /><span className="text-[15px] font-medium">{labels.myProfile}</span>
                 </Link>
-
-                <button
-                  onClick={() => {
-                    signOut();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 dark:text-red-400 w-full text-left"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>{labels.signOut}</span>
+                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] w-full text-left text-gray-900 dark:text-[#e4e6eb]">
+                  <LogOut className="w-5 h-5 text-red-500" /><span className="text-[15px] font-medium">{labels.signOut}</span>
                 </button>
               </>
             ) : (
-              <Link
-                href="/auth/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold"
-              >
-                <LogIn className="w-5 h-5" />
-                <span>{labels.signIn}</span>
+              <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#1877F2] text-white mx-1">
+                <LogIn className="w-5 h-5" /><span className="text-[15px] font-semibold">{labels.signIn}</span>
               </Link>
             )}
           </div>
