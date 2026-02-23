@@ -103,7 +103,7 @@ export async function GET(request: Request) {
       {
         symbol: 'TSLA',
         name: 'Tesla',
-        price: 245.50,
+        price: 207.00,
         change: 2.15,
         icon: '📊',
       },
