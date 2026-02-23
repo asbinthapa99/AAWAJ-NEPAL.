@@ -8,12 +8,15 @@ import { categories } from '@/lib/categories';
 import { districts } from '@/lib/categories';
 import { PostCategory, UrgencyLevel } from '@/lib/types';
 import { URGENCY_CONFIG } from '@/lib/constants';
+import { compressImage } from '@/lib/image';
 import {
   Megaphone,
   Loader2,
   AlertTriangle,
   MapPin,
   Tag,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,6 +29,8 @@ export default function CreatePostPage() {
   const [category, setCategory] = useState<PostCategory>('other');
   const [urgency, setUrgency] = useState<UrgencyLevel>('medium');
   const [district, setDistrict] = useState(profile?.district || '');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +54,45 @@ export default function CreatePostPage() {
     );
   }
 
+  const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8MB before compression
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('Only JPG, PNG, WebP, or HEIC images are allowed.');
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError('Image must be under 8MB before compression.');
+      return;
+    }
+
+    setError('');
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+
+    const compressed = await compressImage(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      quality: 0.75,
+      mimeType: 'image/jpeg',
+      fileName: `post_${Date.now()}.jpg`,
+    });
+
+    setImageFile(compressed);
+    setImagePreview(URL.createObjectURL(compressed));
+  };
+
+  const removeImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
@@ -70,6 +114,31 @@ export default function CreatePostPage() {
       district: user.user_metadata?.district || null,
     }, { onConflict: 'id', ignoreDuplicates: true });
 
+    let image_url: string | null = null;
+
+    if (imageFile) {
+      const fileName = `post_${user.id}_${Date.now()}.jpg`;
+      const { data, error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(fileName, imageFile, {
+          contentType: imageFile.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        setError('Image upload failed: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
+        const { data: urlData } = supabase.storage
+          .from('post-images')
+          .getPublicUrl(data.path);
+        image_url = urlData.publicUrl;
+      }
+    }
+
     // Create post
     const { error: postError, data: post } = await supabase
       .from('posts')
@@ -80,7 +149,7 @@ export default function CreatePostPage() {
         category,
         urgency,
         district: district || null,
-        image_url: null,
+        image_url,
       })
       .select()
       .single();
@@ -209,6 +278,42 @@ export default function CreatePostPage() {
             rows={6}
             className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-transparent focus:border-blue-500 rounded-xl text-sm outline-none transition-colors text-gray-900 dark:text-white placeholder-gray-500 resize-none"
           />
+        </div>
+
+        {/* Image Upload */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            📸 Attach Image (Optional)
+          </label>
+          {imagePreview ? (
+            <div className="relative rounded-xl overflow-hidden">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="w-full h-48 object-cover"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 px-4 py-8 bg-gray-100 dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-colors">
+              <ImageIcon className="w-5 h-5 text-gray-400" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Click to upload an image
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </label>
+          )}
         </div>
 
         {/* Submit */}

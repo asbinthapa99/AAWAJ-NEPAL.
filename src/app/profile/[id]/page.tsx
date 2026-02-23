@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Profile, Post } from '@/lib/types';
 import { useAuth } from '@/components/AuthProvider';
 import PostCard from '@/components/PostCard';
+import { compressImage } from '@/lib/image';
 import {
   MapPin,
   Calendar,
@@ -15,6 +16,7 @@ import {
   Save,
   X,
   RotateCcw,
+  Image as ImageIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { districts } from '@/lib/categories';
@@ -38,6 +40,8 @@ export default function ProfilePage({
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
   // Edit form state
   const [editName, setEditName] = useState('');
@@ -84,12 +88,37 @@ export default function ProfilePage({
 
     setSaving(true);
 
+    let avatar_url = profile?.avatar_url ?? null;
+    if (avatarFile) {
+      const fileName = `avatar_${user.id}_${Date.now()}.jpg`;
+      const { data, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile, {
+          contentType: avatarFile.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error('Failed to upload avatar:', uploadError.message);
+        setSaving(false);
+        return;
+      }
+
+      if (data) {
+        const { data: urlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(data.path);
+        avatar_url = urlData.publicUrl;
+      }
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({
         full_name: editName.trim(),
         bio: editBio.trim() || null,
         district: editDistrict || null,
+        avatar_url,
       })
       .eq('id', user.id);
 
@@ -156,8 +185,16 @@ export default function ProfilePage({
         <div className="px-6 pb-6">
           {/* Avatar */}
           <div className="-mt-12 mb-4 flex items-end justify-between">
-            <div className="w-24 h-24 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center text-white text-3xl font-bold border-4 border-white dark:border-gray-900 shadow-lg">
-              {profile.full_name[0]?.toUpperCase() || 'U'}
+            <div className="w-24 h-24 rounded-2xl border-4 border-white dark:border-gray-900 shadow-lg overflow-hidden bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-3xl font-bold">
+              {profile.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt={profile.full_name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                profile.full_name[0]?.toUpperCase() || 'U'
+              )}
             </div>
 
             {isOwnProfile && !editing && (
@@ -174,6 +211,57 @@ export default function ProfilePage({
           {editing ? (
             /* Edit Form */
             <div className="space-y-4">
+              {isOwnProfile && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Profile Photo
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      {avatarPreview ? (
+                        <img
+                          src={avatarPreview}
+                          alt="Avatar preview"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : profile.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={profile.full_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
+                      )}
+                    </div>
+                    <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer">
+                      <ImageIcon className="w-4 h-4" />
+                      Upload Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          const compressed = await compressImage(file, {
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            quality: 0.75,
+                            mimeType: 'image/jpeg',
+                            fileName: `avatar_${Date.now()}.jpg`,
+                          });
+
+                          if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+                          setAvatarFile(compressed);
+                          setAvatarPreview(URL.createObjectURL(compressed));
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Full Name

@@ -293,3 +293,5 @@ CREATE INDEX IF NOT EXISTS idx_dislikes_user ON dislikes(user_id);
 -- ============================================================
 -- Create bucket named: 'post-images'
 -- Set it as a public bucket for easy access
+-- Create bucket named: 'avatars'
+-- Set it as a public bucket for easy access
