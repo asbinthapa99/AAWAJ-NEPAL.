@@ -62,6 +62,13 @@ export default function Navbar() {
               <Home className="w-5 h-5" />
             </Link>
 
+            <Link
+              href="/feed"
+              className="px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            >
+              Feed
+            </Link>
+
             {user && (
               <Link
                 href="/post/create"

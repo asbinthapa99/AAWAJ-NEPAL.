@@ -21,7 +21,7 @@ export function createClient() {
   globalThis._supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
     auth: {
       // Disable navigator lock — safe since we enforce a single client instance
-      lock: (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => fn(),
+      lock: <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn(),
     },
   });
   return globalThis._supabaseClient;
