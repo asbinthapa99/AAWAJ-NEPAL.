@@ -1,6 +1,6 @@
 Contact: security@awaaz-nepal.com
 Expires: 2026-12-31T23:59:59.000Z
 Preferred-Languages: en, ne
-Canonical: https://awaaz-nepal.vercel.app/.well-known/security.txt
-Policy: https://awaaz-nepal.vercel.app/security-policy
-Acknowledgments: https://awaaz-nepal.vercel.app/security-acknowledgments
+Canonical: https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/.well-known/security.txt
+Policy: https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/security-policy
+Acknowledgments: https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/security-acknowledgments

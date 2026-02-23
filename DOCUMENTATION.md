@@ -729,7 +729,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=xxx
 
 # Optional
-NEXT_PUBLIC_APP_URL=https://awaaz-nepal.vercel.app
+NEXT_PUBLIC_APP_URL=https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app
 ```
 
 ### Production Deployment (Vercel)

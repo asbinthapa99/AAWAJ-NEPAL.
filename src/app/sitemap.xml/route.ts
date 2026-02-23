@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const baseUrl = 'https://awaaz-nepal.vercel.app';
+  const baseUrl = 'https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app';
   
   const staticPages = [
     { url: '/', changefreq: 'daily', priority: '1.0' },

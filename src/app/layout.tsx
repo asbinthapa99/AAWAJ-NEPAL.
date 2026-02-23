@@ -36,25 +36,25 @@ export const metadata: Metadata = {
     "नागरिक",
     "सामाजिक परिवर्तन",
   ],
-  metadataBase: new URL("https://awaaz-nepal.vercel.app"),
-  canonical: "https://awaaz-nepal.vercel.app",
+  metadataBase: new URL("https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app"),
   alternates: {
+    canonical: "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app",
     languages: {
-      en: "https://awaaz-nepal.vercel.app/en",
-      ne: "https://awaaz-nepal.vercel.app/ne",
+      en: "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/en",
+      ne: "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/ne",
     },
   },
   openGraph: {
     type: "website",
     locale: "en_NP",
-    url: "https://awaaz-nepal.vercel.app",
+    url: "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app",
     title: "Awaaz Nepal — Voice for Citizens",
     description:
       "Empower Nepali citizens to raise voices about public issues and drive community change",
     siteName: "Awaaz Nepal",
     images: [
       {
-        url: "https://awaaz-nepal.vercel.app/og-image.png",
+        url: "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Awaaz Nepal - Voice for Citizens",
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     title: "Awaaz Nepal — Voice for Citizens",
     description: "Civic engagement platform for Nepali youth",
     creator: "@awaaznepal",
-    images: ["https://awaaz-nepal.vercel.app/twitter-image.png"],
+    images: ["https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app/twitter-image.png"],
   },
   robots: "index, follow, max-image-preview:large",
   authors: [{ name: "Asbin Thapa", url: "https://github.com/asbinthapa99" }],
@@ -90,7 +90,7 @@ export default function RootLayout({
               "@type": "WebApplication",
               "name": "Awaaz Nepal",
               "description": "Democratic platform empowering Nepali citizens to raise voices about public issues",
-              "url": "https://awaaz-nepal.vercel.app",
+              "url": "https://aawaj-nepal-elswqp0q9-asbinthapa99s-projects.vercel.app",
               "applicationCategory": "CivicTech",
               "offers": {
                 "@type": "Offer",

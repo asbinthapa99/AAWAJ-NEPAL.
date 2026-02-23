@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// @ts-ignore - no type definitions available for this package
 import { getGoldPrices } from 'hamro-patro-scraper';
 
 type RateEntry = {
@@ -76,7 +77,9 @@ export async function GET(request: Request) {
 
   try {
     const data = await getGoldPrices();
+    // @ts-ignore - goldPrices property is available at runtime
     const items = normalizeItems(Array.isArray(data?.goldPrices) ? data.goldPrices : []);
+    // @ts-ignore - updatedAt property is available at runtime
     const updatedAt = normalizeUpdatedAt(String(data?.updatedAt ?? ''));
     const payload = {
       items,
