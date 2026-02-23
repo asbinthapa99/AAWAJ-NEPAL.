@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function LoginPage() {
+  const { user } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +18,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isHuman, setIsHuman] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/feed');
+    }
+  }, [user, router]);
 
   const handleOAuth = async (provider: 'google' | 'facebook') => {
     setLoadingOAuth(provider);
@@ -121,7 +129,7 @@ export default function LoginPage() {
       }
       setLoading(false);
     } else {
-      router.push('/');
+      router.push('/feed');
       router.refresh();
     }
   };
