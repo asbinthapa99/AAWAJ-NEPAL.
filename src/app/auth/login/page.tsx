@@ -214,7 +214,7 @@ export default function LoginPage() {
           <HCaptcha
             ref={captchaRef}
             sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '03fc2e1c-8970-4cec-bc4a-1250737e2a92'}
-            onVerify={(token) => setCaptchaToken(token.response)}
+            onVerify={(token) => setCaptchaToken(token)}
             theme="dark"
           />
 
