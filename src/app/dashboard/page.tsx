@@ -33,6 +33,7 @@ export default function DashboardPage() {
   const [category, setCategory] = useState<PostCategory | 'all'>('all');
   const [activeSection, setActiveSection] = useState<FeedSection>('for-you');
   const [hasMore, setHasMore] = useState(true);
+  const [fetchError, setFetchError] = useState('');
   const [news, setNews] = useState<News[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [goldItems, setGoldItems] = useState<{ id: number; label: string; value: string }[]>([]);
@@ -75,10 +76,11 @@ export default function DashboardPage() {
     try {
       if (!isLoadMore) setLoading(true);
       else setLoadingMore(true);
+      setFetchError('');
 
       let query = supabase
         .from('posts')
-        .select('id, title, content, category, urgency, district, supports_count, dislikes_count, comments_count, created_at, author_id, voice_url, image_url, author:profiles(id, full_name, username, avatar_url)');
+        .select('*, author:profiles(id, full_name, username, avatar_url)');
 
       if (category !== 'all') query = query.eq('category', category);
 
@@ -93,6 +95,13 @@ export default function DashboardPage() {
 
       const { data, error } = await query;
 
+      if (error) {
+        console.error('Failed to fetch posts:', error);
+        setFetchError('Failed to load posts: ' + error.message);
+        setHasMore(false);
+        return;
+      }
+
       const normalizedData = (data || []).map((post: Record<string, unknown>) => ({
         ...post,
         author: Array.isArray(post.author) ? post.author[0] : post.author,
@@ -100,15 +109,11 @@ export default function DashboardPage() {
 
       const hydratedData = await attachDislikeFlags(normalizedData);
 
-      if (error) {
-        console.error('Failed to fetch posts:', error.message);
-        setHasMore(false);
-      } else {
-        setPosts((prev) => (isLoadMore ? [...prev, ...hydratedData] : hydratedData));
-        setHasMore(hydratedData.length >= POSTS_PER_PAGE);
-      }
+      setPosts((prev) => (isLoadMore ? [...prev, ...hydratedData] : hydratedData));
+      setHasMore(hydratedData.length >= POSTS_PER_PAGE);
     } catch (err) {
       console.error('Error fetching posts:', err);
+      setFetchError('Error loading posts: ' + (err instanceof Error ? err.message : String(err)));
       setHasMore(false);
     } finally {
       setLoading(false);
@@ -401,6 +406,11 @@ export default function DashboardPage() {
           </div>
 
           {/* Posts Feed */}
+          {fetchError && (
+            <div className="mb-4 px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl text-sm">
+              ⚠️ {fetchError}
+            </div>
+          )}
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16">
               <Loader2 className="w-8 h-8 animate-spin text-[#1877F2] mb-3" />
