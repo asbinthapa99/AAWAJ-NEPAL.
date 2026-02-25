@@ -106,13 +106,20 @@ export default function CreatePostPage() {
     const supabase = createClient();
 
     // Ensure profile exists (in case trigger didn't run at signup)
-    await supabase.from('profiles').upsert({
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: user.id,
       username: user.user_metadata?.username || `user_${user.id.slice(0, 8)}`,
       email: user.email ?? '',
       full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
       district: user.user_metadata?.district || null,
     }, { onConflict: 'id', ignoreDuplicates: true });
+
+    if (profileError) {
+      console.error('Profile upsert failed:', profileError);
+      setError('Failed to verify profile: ' + profileError.message);
+      setLoading(false);
+      return;
+    }
 
     let image_url: string | null = null;
 
@@ -140,24 +147,29 @@ export default function CreatePostPage() {
     }
 
     // Create post
+    const postPayload = {
+      author_id: user.id,
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      urgency,
+      district: district || null,
+      image_url,
+    };
+    console.log('Creating post with payload:', postPayload);
+
     const { error: postError, data: post } = await supabase
       .from('posts')
-      .insert({
-        author_id: user.id,
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        urgency,
-        district: district || null,
-        image_url,
-      })
+      .insert(postPayload)
       .select()
       .single();
 
     if (postError) {
-      setError(postError.message);
+      console.error('Post creation failed:', postError);
+      setError(postError.message + (postError.details ? ' — ' + postError.details : '') + (postError.hint ? ' (Hint: ' + postError.hint + ')' : ''));
       setLoading(false);
     } else {
+      console.log('Post created successfully:', post.id);
       router.push(`/post/${post.id}`);
     }
   };

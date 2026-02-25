@@ -25,17 +25,23 @@ WHERE email IS NULL;
 -- Drop the old constraint
 ALTER TABLE posts DROP CONSTRAINT IF EXISTS posts_category_check;
 
--- Add new constraint with all categories
+-- Fix any rows that used old category names
+UPDATE posts SET category = 'governance' WHERE category = 'politics';
+UPDATE posts SET category = 'safety' WHERE category = 'corruption';
+UPDATE posts SET category = 'employment' WHERE category = 'economy';
+
+-- Add new constraint with all categories (matches app code)
 ALTER TABLE posts ADD CONSTRAINT posts_category_check 
   CHECK (category IN (
-    'politics',
+    'infrastructure',
     'education', 
     'health',
-    'infrastructure',
     'environment',
-    'economy',
+    'governance',
+    'safety',
+    'employment',
     'social',
-    'corruption',
+    'culture',
     'technology',
     'other'
   ));
