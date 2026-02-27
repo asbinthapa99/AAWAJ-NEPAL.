@@ -1,9 +1,9 @@
-export const APP_NAME = 'Awaaz Nepal';
-export const APP_NAME_NP = 'आवाज नेपाल';
-export const APP_TAGLINE = 'Voice of Nepali Youth';
-export const APP_TAGLINE_NP = 'नेपाली युवाको आवाज';
+export const APP_NAME = 'GuffGaff';
+export const APP_NAME_NP = 'गफगाफ';
+export const APP_TAGLINE = 'Connect. Share. Discuss.';
+export const APP_TAGLINE_NP = 'जोडिनुहोस् · साझा गर्नुहोस् · छलफल गर्नुहोस्';
 export const APP_DESCRIPTION =
-  'A platform for Nepali youth to raise their voices about problems affecting Nepal.';
+  'A social platform for Nepali people to connect, share thoughts, raise issues, and discuss what matters.';
 
 export const URGENCY_CONFIG = {
   low: {

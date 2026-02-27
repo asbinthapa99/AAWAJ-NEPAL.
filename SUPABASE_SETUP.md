@@ -1,6 +1,6 @@
 # Supabase Setup Guide - Complete Checklist
 
-This guide covers ALL the SQL and configuration needed for Awaaz Nepal.
+This guide covers ALL the SQL and configuration needed for GuffGaff.
 
 ## 📋 Step-by-Step Setup
 

@@ -1,8 +1,8 @@
-# AWAAZ NEPAL - PROJECT DOCUMENTATION
+# GUFFGAFF - PROJECT DOCUMENTATION
 
-**Project Name**: Awaaz Nepal — Voice for Citizens  
-**Version**: 1.0.0  
-**Date**: February 23, 2026  
+**Project Name**: GuffGaff — गफगाफ | Connect Nepali People  
+**Version**: 2.0.0  
+**Date**: February 27, 2026  
 **Author**: Asbin Thapa  
 **GitHub**: https://github.com/asbinthapa99/AAWAJ-NEPAL
 
@@ -30,21 +30,22 @@
 ## 1. PROJECT OVERVIEW
 
 ### Mission
-Awaaz Nepal is a civic engagement platform that empowers Nepali citizens to:
-- **Raise voices** on public issues and problems
-- **Track accountability** from government officials
-- **Collaborate** with community members
-- **Document evidence** with voice recordings and posts
-- **Drive change** through collective action
+GuffGaff is a social networking platform for Nepali people to:
+- **Connect** with other Nepali users via follows and profiles
+- **Share thoughts** with inline post creation (text + photo)
+- **Raise issues** about civic problems via a dedicated issue form
+- **Engage** through likes, dislikes, comments, reposts, and shares
+- **Stay informed** with notifications, news, and market data
+- **Build community** through user search, follow system, and discussions
 
 ### Target Users
-- Citizens aged 16+ in Nepal
+- Nepali citizens and diaspora worldwide
 - Community activists and NGOs
-- Government officials (for feedback)
 - Media and journalists
-- International observers
+- Students and youth
 
 ### Key Statistics
+- **Social Features**: Follow, repost, block, notifications, admin moderation
 - **8 Market Assets** tracked in real-time (BTC, ETH, SOL, XAU, NVDA, GOOGL, TSLA, AAPL)
 - **Bilingual Support**: English & Nepali
 - **Legal Pages**: About, Privacy, Terms, MIT License
@@ -89,69 +90,81 @@ Awaaz Nepal is a civic engagement platform that empowers Nepali citizens to:
 ## 3. ARCHITECTURE & STRUCTURE
 
 ```
-awaaz-nepal/
+guffgaff/
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                 # Landing page (client component)
-│   │   ├── layout.tsx               # Root layout with metadata
-│   │   ├── globals.css              # Global styles
+│   │   ├── page.tsx                 # Landing page (server wrapper)
+│   │   ├── page.client.tsx          # Landing page (client component)
+│   │   ├── layout.tsx               # Root layout with GuffGaff metadata
+│   │   ├── globals.css              # Global styles & animations
 │   │   ├── auth/
 │   │   │   ├── callback/            # OAuth callback handler
 │   │   │   ├── login/               # Login page
-│   │   │   └── register/            # Registration page
+│   │   │   ├── register/            # Registration page
+│   │   │   ├── forgot-password/     # Password reset request
+│   │   │   ├── reset-password/      # Password reset form
+│   │   │   └── verify-email/        # Email verification
+│   │   ├── dashboard/               # Main social feed (authenticated)
+│   │   ├── feed/                    # Public feed (unauthenticated)
 │   │   ├── post/
-│   │   │   ├── create/              # Create post
-│   │   │   └── [id]/                # View post
+│   │   │   ├── create/              # Full issue creation page
+│   │   │   └── [id]/                # Post detail + comments
 │   │   ├── profile/
-│   │   │   └── [id]/                # User profile
+│   │   │   └── [id]/                # User profile + follow/block
+│   │   ├── notifications/           # Notification center
+│   │   ├── admin/                   # Admin moderation panel
 │   │   ├── about/                   # About page
 │   │   ├── privacy/                 # Privacy policy
 │   │   ├── terms/                   # Terms of service
+│   │   ├── sitemap.xml/             # SEO sitemap
 │   │   └── api/
 │   │       ├── market-price/        # Crypto & stock prices API
-│   │       └── gold-price/          # Gold/silver prices API
+│   │       ├── gold-price/          # Gold/silver prices API
+│   │       ├── search/              # User search API
+│   │       └── verify-captcha/      # CAPTCHA verification
 │   │
 │   ├── components/
-│   │   ├── CryptoDashboard.tsx      # Live charts dashboard
-│   │   ├── AuthProvider.tsx         # Auth context provider
-│   │   ├── CategoryFilter.tsx       # Post filtering
+│   │   ├── AuthProvider.tsx         # Auth context + banned user check
+│   │   ├── Navbar.tsx               # Navigation bar with live search
+│   │   ├── CreatePostBox.tsx        # Inline "What's on your mind?" box
+│   │   ├── RaiseIssueModal.tsx      # Popup modal for raising issues
+│   │   ├── PostCard.tsx             # Post card with repost header
 │   │   ├── CommentSection.tsx       # Comments on posts
-│   │   ├── Navbar.tsx               # Navigation bar
-│   │   ├── PostCard.tsx             # Post display card
+│   │   ├── SupportButton.tsx        # Like/support button
+│   │   ├── DislikeButton.tsx        # Dislike button
+│   │   ├── RepostButton.tsx         # Repost with caption
+│   │   ├── FollowButton.tsx         # Follow/unfollow toggle
+│   │   ├── BlockButton.tsx          # Block/unblock user
+│   │   ├── NotificationBadge.tsx    # Unread notification count
+│   │   ├── CategoryFilter.tsx       # Post category filtering
 │   │   ├── ReportDialog.tsx         # Report content dialog
-│   │   ├── SupportButton.tsx        # Support/funding button
+│   │   ├── CryptoDashboard.tsx      # Live charts dashboard
 │   │   ├── ThemeProvider.tsx        # Dark/light mode
 │   │   ├── ThemeToggle.tsx          # Theme switcher
-│   │   ├── VoiceRecorder.tsx        # Audio recording
+│   │   ├── CookieConsent.tsx        # GDPR cookie banner
 │   │   └── NepalFlag3D.tsx          # 3D flag animation
 │   │
 │   ├── lib/
-│   │   ├── types.ts                 # TypeScript interfaces
-│   │   ├── constants.ts             # App constants
-│   │   ├── categories.ts            # Post categories
+│   │   ├── types.ts                 # TypeScript interfaces (Post, Profile, Follow, Repost, Notification, Block)
+│   │   ├── constants.ts             # App constants (GuffGaff branding)
+│   │   ├── categories.ts            # Post categories & districts
+│   │   ├── image.ts                 # Image compression utility
 │   │   └── supabase/
-│   │       ├── client.ts            # Client-side auth
-│   │       ├── server.ts            # Server-side operations
-│   │       └── middleware.ts        # Auth middleware
+│   │       ├── client.ts            # Browser client (singleton)
+│   │       └── middleware.ts        # Auth middleware + route protection
 │   │
 │   └── middleware.ts                # Next.js middleware
 │
-├── supabase/
-│   └── schema.sql                   # Database schema
-│
 ├── public/
 │   ├── favicon.ico
-│   ├── nepal-flag.png
 │   └── *.svg                        # SVG assets
 │
 ├── package.json
 ├── tsconfig.json
 ├── next.config.ts
-├── eslint.config.mjs
-├── postcss.config.mjs
-├── README.md
-├── LICENSE                          # MIT License
-└── DOCUMENTATION.md                 # This file
+├── DOCUMENTATION.md                 # This file
+├── SUPABASE_SETUP.md                # Database setup guide
+└── LICENSE                          # MIT License
 ```
 
 ---
@@ -161,57 +174,77 @@ awaaz-nepal/
 ### 4.1 Authentication & User Management
 - ✅ **OAuth Integration**: Google Sign-In
 - ✅ **Email/Password Login**: Traditional authentication
-- ✅ **User Profiles**: Profile pictures, bio, posts
+- ✅ **User Profiles**: Avatar, bio, follower/following counts
 - ✅ **Account Management**: Update profile, change password
 - ✅ **Session Persistence**: Supabase Auth token handling
+- ✅ **Banned User Detection**: Auto sign-out for banned accounts
+- ✅ **Email Verification**: Confirm email before posting
+- ✅ **Password Reset**: Forgot password flow via email
 
 ### 4.2 Post & Issue Management
-- ✅ **Create Posts**: Text, images, voice recordings, links
+- ✅ **Inline Post Creation**: Facebook-style "What's on your mind?" box with photo upload
+- ✅ **Raise Issue Modal**: Popup form with category, urgency, district, image for civic issues
+- ✅ **Full Create Page**: Dedicated `/post/create` page for detailed issue posts
 - ✅ **Categorize Issues**: 12+ categories (Education, Health, Infrastructure, etc.)
-- ✅ **Support Posts**: Users can support/upvote posts
-- ✅ **Comment Section**: Community discussions
-- ✅ **Report Feature**: Flag inappropriate content
-- ✅ **Location Tagging**: District-level tagging for localfocus
+- ✅ **Urgency Levels**: Low, Medium, High, Critical
+- ✅ **Support/Like Posts**: Users can support/upvote posts
+- ✅ **Dislike Posts**: Sentiment signal without hiding content
+- ✅ **Comment Section**: Threaded community discussions
+- ✅ **Report Feature**: Flag inappropriate content with admin review
+- ✅ **Location Tagging**: District-level tagging (77 districts)
+- ✅ **Image Compression**: Client-side image compression before upload
 
-### 4.3 News & Community Section
-- ✅ **Community News**: User-posted news feed
-- ✅ **News Posting**: Users can submit local news
-- ✅ **News Feed**: Curated news display
+### 4.3 Social Network Features
+- ✅ **Follow System**: Follow/unfollow users with FollowButton component
+- ✅ **Follower/Following Counts**: Displayed on profile pages
+- ✅ **Repost/Share**: Repost with optional caption via RepostButton
+- ✅ **Block System**: Block/unblock users with confirmation dialog
+- ✅ **User Search**: Live search dropdown in Navbar with debounced API calls
+- ✅ **Notification System**: Real-time notification badge with polling (30s)
+- ✅ **Notification Types**: follow, repost, like, comment, report
+- ✅ **Notification Page**: Mark as read, mark all read, type-specific icons
 
-### 4.4 Market Data & Charts
+### 4.4 Admin & Moderation
+- ✅ **Admin Dashboard**: `/admin` page for report management
+- ✅ **Report Review**: View reported content with status filters
+- ✅ **Soft Delete Posts**: Admin can remove posts (soft delete via deleted_at)
+- ✅ **Ban Users**: Admin can ban users (sets banned_at on profile)
+- ✅ **Role-Based Access**: Admin-only page with client-side role check
+
+### 4.5 Feed System
+- ✅ **Dashboard Feed**: Authenticated user feed with For You, Trending, Latest tabs
+- ✅ **Public Feed**: Unauthenticated browsable feed at `/feed`
+- ✅ **Category Filtering**: Filter posts by category
+- ✅ **Real-time Updates**: Supabase real-time subscription for new posts
+- ✅ **Infinite Scroll**: Load more posts on scroll
+
+### 4.6 News & Market Data
+- ✅ **Community News**: User-posted news feed with marquee
 - ✅ **Crypto Dashboard**: BTC, ETH, SOL with live charts
 - ✅ **Stock Charts**: NVDA, GOOGL, TSLA, AAPL via TradingView
 - ✅ **Gold/Silver Prices**: Live Nepali market rates
-- ✅ **Real-time Updates**: 30-second refresh for crypto, continuous for stocks
 
-### 4.5 Legal & Compliance
+### 4.7 Legal & Compliance
 - ✅ **About Page**: Project mission, development info, legal warnings
 - ✅ **Privacy Policy**: Comprehensive data practices
 - ✅ **Terms of Service**: Usage agreements, legal consequences
 - ✅ **MIT License**: Open source licensing
-- ✅ **Legal Disclaimers**: Bilingual (EN/NP) warnings on all pages
-- ✅ **Nepali Law References**: Electronic Transactions Act 2063, National Penal Code 2074
+- ✅ **Legal Disclaimers**: Bilingual (EN/NP) warnings
 
-### 4.6 Multilingual Support
-- ✅ **Bilingual Content**: English & Nepali
-- ✅ **Language Toggle**: Persistent user preference
-- ✅ **useSync External Store**: Reactive language switching
-- ✅ **RTL/LTR Support**: Proper text direction
-
-### 4.7 UI/UX Features
+### 4.8 UI/UX Features
 - ✅ **Dark/Light Mode**: System theme detection + manual toggle
 - ✅ **Responsive Design**: Mobile, tablet, desktop
+- ✅ **Bilingual**: English & Nepali with language toggle
 - ✅ **Smooth Animations**: Reveal, fade, slide transitions
-- ✅ **Loading States**: Skeletons and spinners
-- ✅ **Error Handling**: User-friendly error messages
 - ✅ **Cookie Consent**: GDPR-compliant consent banner
+- ✅ **Facebook-style Dashboard**: Three-column layout with sidebar navigation
 
-### 4.8 Security Features
+### 4.9 Security Features
 - ✅ **Rate Limiting**: 60 requests/5 minutes per IP
-- ✅ **CORS Headers**: Cross-origin security
-- ✅ **Security Headers**: HSTS, X-Frame-Options, COOP
-- ✅ **Content Security Policy**: XSS prevention
+- ✅ **Security Headers**: HSTS, X-Frame-Options, COOP, X-Content-Type-Options
+- ✅ **Middleware Protection**: Auth-required routes checked server-side
 - ✅ **RLS (Row-Level Security)**: Supabase data access control
+- ✅ **Image Validation**: File type and size checks before upload
 
 ---
 
@@ -323,122 +356,219 @@ awaaz-nepal/
 
 ### 6.2 Navbar Component
 
+**File**: `src/components/Navbar.tsx`
+
 **Features**:
-- **Logo**: Awaaz Nepal branding
-- **Search Bar**: Problem search functionality
+- **Logo**: GuffGaff (गफगाफ) branding
+- **Live Search**: Debounced user search with dropdown results
+- **Notification Badge**: Real-time unread count with polling
 - **Language Toggle**: EN/NP switcher
 - **Theme Toggle**: Dark/light mode
-- **Authentication Links**: Login/Register/Logout
-- **User Profile**: Dropdown menu
+- **Auth Links**: Login/Register/Logout
 - **Responsive**: Mobile hamburger menu
 
-### 6.3 PostCard Component
+### 6.3 CreatePostBox Component
+
+**File**: `src/components/CreatePostBox.tsx`
 
 **Features**:
-- **Post Display**: Title, author, category, support count
-- **Media**: Thumbnail images
-- **Interactions**: Support button, comment count
-- **Metadata**: Timestamp, location (district)
-- **Report Option**: Flag inappropriate content
-- **Responsive**: Works on all screen sizes
+- Facebook-style "What's on your mind?" inline post box
+- Avatar display with user initial fallback
+- Expandable textarea on click
+- Photo upload with client-side compression
+- Image preview with remove button
+- "Raise Issue" button triggers RaiseIssueModal
+- Posts directly to feed without page navigation
 
-### 6.4 Navbar Component
+### 6.4 RaiseIssueModal Component
+
+**File**: `src/components/RaiseIssueModal.tsx`
 
 **Features**:
-- Responsive layout with hamburger menu
-- Search functionality
-- Language selector (EN/NP)
-- Theme toggle (dark/light)
-- User profile menu
-- Sign in/out buttons
+- Popup modal overlay (no page navigation)
+- Issue title, category selector, urgency buttons
+- District selector (77 Nepal districts)
+- Description textarea
+- Image evidence upload
+- Backdrop blur with close button
+
+### 6.5 PostCard Component
+
+**Features**:
+- Post display with author info, category badge, urgency indicator
+- Media: thumbnail images
+- Action bar: Support, Dislike, Comment, Repost, Share buttons
+- Repost header showing original sharer
+- Report option, delete option (post author)
+- Location/district tag
+
+### 6.6 Social Components
+
+| Component | File | Purpose |
+|---|---|---|
+| FollowButton | `FollowButton.tsx` | Follow/unfollow toggle with notification |
+| RepostButton | `RepostButton.tsx` | Repost with optional caption modal |
+| BlockButton | `BlockButton.tsx` | Block/unblock with confirmation dialog |
+| NotificationBadge | `NotificationBadge.tsx` | Unread count badge with 30s polling |
+| DislikeButton | `DislikeButton.tsx` | Dislike toggle button |
 
 ---
 
 ## 7. DATABASE SCHEMA
 
-### Tables
+### Core Tables
 
 #### `profiles`
 ```sql
 CREATE TABLE profiles (
-  id UUID PRIMARY KEY,
-  email VARCHAR(255) UNIQUE,
-  full_name VARCHAR(255),
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  email TEXT,
+  username TEXT UNIQUE NOT NULL,
+  full_name TEXT,
   bio TEXT,
   avatar_url TEXT,
-  district VARCHAR(100),
-  created_at TIMESTAMP,
-  verified BOOLEAN DEFAULT FALSE
+  district TEXT,
+  role TEXT DEFAULT 'user',          -- 'user' | 'admin'
+  banned_at TIMESTAMPTZ,             -- set when user is banned
+  followers_count INT DEFAULT 0,
+  following_count INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
 #### `posts`
 ```sql
 CREATE TABLE posts (
-  id UUID PRIMARY KEY,
-  author_id UUID REFERENCES profiles(id),
-  title VARCHAR(500) NOT NULL,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author_id UUID NOT NULL REFERENCES profiles(id),
+  title TEXT NOT NULL,
   content TEXT,
-  category VARCHAR(50),
-  district VARCHAR(50),
-  media_url TEXT[],
-  voice_url TEXT,
-  supports_count INTEGER DEFAULT 0,
-  comments_count INTEGER DEFAULT 0,
+  category TEXT DEFAULT 'other',
+  urgency TEXT DEFAULT 'medium',     -- low | medium | high | critical
+  district TEXT,
+  image_url TEXT,
+  supports_count INT DEFAULT 0,
+  dislikes_count INT DEFAULT 0,
+  comments_count INT DEFAULT 0,
+  reposts_count INT DEFAULT 0,
   reported BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP,
-  visibility VARCHAR(20) DEFAULT 'public'
+  deleted_at TIMESTAMPTZ,            -- soft delete
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
 #### `comments`
 ```sql
 CREATE TABLE comments (
-  id UUID PRIMARY KEY,
-  post_id UUID REFERENCES posts(id),
-  author_id UUID REFERENCES profiles(id),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES profiles(id),
   content TEXT NOT NULL,
-  created_at TIMESTAMP,
-  updated_at TIMESTAMP
+  deleted_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-#### `supports`
+### Social Tables
+
+#### `supports` (Likes)
 ```sql
 CREATE TABLE supports (
-  id UUID PRIMARY KEY,
-  post_id UUID REFERENCES posts(id),
-  user_id UUID REFERENCES profiles(id),
-  created_at TIMESTAMP,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
   UNIQUE(post_id, user_id)
+);
+```
+
+#### `dislikes`
+```sql
+CREATE TABLE dislikes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(post_id, user_id)
+);
+```
+
+#### `follows`
+```sql
+CREATE TABLE follows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id UUID NOT NULL REFERENCES profiles(id),
+  following_id UUID NOT NULL REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(follower_id, following_id)
+);
+```
+
+#### `reposts`
+```sql
+CREATE TABLE reposts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  caption TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(post_id, user_id)
+);
+```
+
+#### `notifications`
+```sql
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  actor_id UUID REFERENCES profiles(id),
+  type TEXT NOT NULL,                -- 'follow' | 'repost' | 'like' | 'comment' | 'report'
+  post_id UUID REFERENCES posts(id),
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+```
+
+#### `blocks`
+```sql
+CREATE TABLE blocks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  blocker_id UUID NOT NULL REFERENCES profiles(id),
+  blocked_id UUID NOT NULL REFERENCES profiles(id),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(blocker_id, blocked_id)
+);
+```
+
+#### `reports`
+```sql
+CREATE TABLE reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id UUID REFERENCES posts(id),
+  reporter_id UUID NOT NULL REFERENCES profiles(id),
+  reason TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',     -- 'pending' | 'reviewed' | 'dismissed'
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
 #### `news`
 ```sql
 CREATE TABLE news (
-  id UUID PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   author_id UUID REFERENCES profiles(id),
-  title VARCHAR(500) NOT NULL,
-  content TEXT,
-  link VARCHAR(500),
-  created_at TIMESTAMP,
-  likes_count INTEGER DEFAULT 0
+  title TEXT NOT NULL,
+  body TEXT,
+  link TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
-### Indexes
-- `posts(district, created_at)` - For district filtering
-- `posts(category)` - For category filtering
-- `supports(user_id)` - For user support tracking
-- `comments(post_id)` - For post comments
-
 ### Row-Level Security (RLS)
-- Users can view all public posts
-- Users can only edit/delete their own posts
-- Comments visible to all on public posts
-- Private posts only visible to author
+- All tables have RLS enabled
+- Users can view all public posts and profiles
+- Users can only modify their own data
+- Admin role bypasses certain restrictions
 
 ---
 
@@ -463,10 +593,11 @@ CREATE TABLE news (
 - Automatic refresh before expiry
 - Logout clears cookie and session
 
-### Protected Routes
+### Protected Routes (Middleware)
 - `/post/create` - Requires authentication
-- `/profile/[id]` - Profile-specific pages
-- `/post/[id]` - Post-specific actions (edit, delete,comment)
+- `/dashboard` - Requires authentication
+- `/notifications` - Requires authentication (client-side)
+- `/admin` - Requires admin role (client-side)
 
 ---
 
@@ -558,17 +689,11 @@ include_24hr_change=true
 ```
 MIT License
 
-Copyright (c) 2025 Awaaz Nepal
+Copyright (c) 2025 GuffGaff
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+in the Software without restriction...
 ```
 
 ### Legal Disclaimers
@@ -576,11 +701,8 @@ copies or substantial portions of the Software.
 **Market Data Disclaimer** (English & Nepali):
 ```
 ⚠️ LEGAL DISCLAIMER: This information is for educational and informational 
-purposes only. NOT investment advice, NOT financial advice, and NOT legal advice. 
-Prices may be delayed. Crypto and stock markets carry significant risk. Consult 
-a licensed financial advisor, investment professional, and lawyer before making 
-any investment or trading decisions. Awaaz Nepal assumes no liability for losses 
-resulting from reliance on this information.
+purposes only. NOT investment advice. GuffGaff assumes no liability for 
+losses resulting from reliance on this information.
 ```
 
 ### Nepali Laws Referenced
@@ -791,49 +913,53 @@ npm run lint
 #### Phase 1: Foundation (Completed)
 - ✅ Next.js setup with TypeScript
 - ✅ Supabase integration
-- ✅ Authentication (Google OAuth)
-- ✅ Database schema design
-- ✅ Responsive layout foundation
+- ✅ Authentication (Google OAuth + Email/Password)
+- ✅ Database schema with 11 tables
+- ✅ Responsive three-column dashboard layout
 
 #### Phase 2: Core Features (Completed)
-- ✅ Post creation interface
+- ✅ Inline post creation (CreatePostBox)
+- ✅ Raise Issue modal popup (RaiseIssueModal)
+- ✅ Full post creation page
 - ✅ Comment system
-- ✅ Support/upvote mechanism
-- ✅ District tagging
+- ✅ Support/dislike mechanism
+- ✅ District tagging (77 districts)
 - ✅ Category filtering
-- ✅ User profiles
+- ✅ User profiles with avatar upload
 
-#### Phase 3: Market Features (Completed)
+#### Phase 3: Social Network (Completed)
+- ✅ Follow/unfollow system
+- ✅ Repost with caption
+- ✅ Block/unblock users
+- ✅ Notification system (badge + page)
+- ✅ Live user search in Navbar
+- ✅ Follower/following counts on profiles
+
+#### Phase 4: Admin & Moderation (Completed)
+- ✅ Admin dashboard for report review
+- ✅ Soft delete posts
+- ✅ Ban users
+- ✅ Report system with status tracking
+
+#### Phase 5: Market Features (Completed)
 - ✅ CoinGecko cryptocurrency integration
 - ✅ TradingView stock charts
 - ✅ Gold/silver price scraper
 - ✅ Real-time price updates
-- ✅ Market dashboard UI
 
-#### Phase 4: Legal & Compliance (Completed)
-- ✅ About page
-- ✅ Privacy policy
-- ✅ Terms of service
-- ✅ MIT License
-- ✅ Legal disclaimers (EN/NP)
-- ✅ Nepali law references
+#### Phase 6: Legal & Polish (Completed)
+- ✅ About, Privacy, Terms pages
+- ✅ Dark/light mode + bilingual (EN/NP)
+- ✅ Security headers, rate limiting
+- ✅ Cookie consent, SEO sitemap
+- ✅ GuffGaff rebrand
 
-#### Phase 5: Polish & Security (Completed)
-- ✅ Dark/light mode
-- ✅ Bilingual support (EN/NP)
-- ✅ Rate limiting
-- ✅ Security headers
-- ✅ Error handling
-- ✅ Loading states
-- ✅ Cookie consent
-
-#### Phase 6: Enhancement (In Progress)
-- 🔄 Advanced analytics
-- 🔄 Media moderation
-- 🔄 Trending algorithm
-- 🔄 Mobile app (React Native)
-- 🔄 SMS notifications
-- 🔄 Offline support
+#### Phase 7: Enhancement (Planned)
+- 🔄 Optimistic UI updates
+- 🔄 Real-time Supabase subscriptions for notifications
+- 🔄 Post edit functionality
+- 🔄 Password change from settings
+- 🔄 Error boundaries and loading.tsx files
 
 ### Git Commit Strategy
 
@@ -957,25 +1083,24 @@ git push origin feature/crypto-dashboard
 
 ## CONCLUSION
 
-Awaaz Nepal represents a comprehensive effort to build a civic engagement platform tailored for Nepali citizens. The platform combines modern web technologies with real-time market data and strict legal compliance to create a trusted space for voice and accountability.
+GuffGaff is a full-featured social networking platform for Nepali people, combining community engagement with civic issue reporting. The platform includes a complete social graph (follows, blocks, notifications), inline and modal post creation, admin moderation, market data dashboards, and bilingual support.
 
 ### Key Achievements
-✅ Full-stack Next.js application  
-✅ Secure OAuth authentication  
+✅ Full-stack Next.js 16 application with 23 routes  
+✅ Social network features: follow, repost, block, notifications  
+✅ Inline post creation + Raise Issue popup modal  
+✅ Admin moderation panel  
+✅ Secure OAuth + email/password authentication  
 ✅ Real-time market data integration  
-✅ Comprehensive legal framework  
 ✅ Bilingual interface (EN/NP)  
-✅ Professional UI with animations  
-✅ Rate-limited secure APIs  
-✅ Production-ready code  
+✅ Production-ready with zero build errors  
 
 ### Next Steps
-1. Deploy to production (Vercel)
-2. Gather user feedback
-3. Iterate on design/UX
-4. Plan Phase 6 features
-5. Build community
-6. Establish partnerships
+1. Deploy v2.0 to production (Vercel)
+2. Add soft-delete filtering to feed queries
+3. Implement post edit functionality
+4. Add real-time Supabase subscriptions
+5. Build community and gather feedback
 
 ---
 
@@ -1000,8 +1125,8 @@ Awaaz Nepal represents a comprehensive effort to build a civic engagement platfo
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: February 23, 2026  
+**Document Version**: 2.0  
+**Last Updated**: February 27, 2026  
 **Author**: Asbin Thapa  
 **License**: MIT
 

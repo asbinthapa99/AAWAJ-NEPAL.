@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import ThemeToggle from './ThemeToggle';
-import { APP_NAME } from '@/lib/constants';
 import {
   Megaphone,
   PlusCircle,
@@ -14,46 +13,78 @@ import {
   X,
   Home,
   Search,
-  Bell,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import NotificationBadge from './NotificationBadge';
+import { createClient } from '@/lib/supabase/client';
+
+interface SearchResult {
+  id: string;
+  username: string;
+  full_name: string;
+  avatar_url: string | null;
+}
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [language, setLanguage] = useState<'en' | 'np'>('en');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const handleSearch = useCallback((query: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+    searchTimerRef.current = setTimeout(async () => {
+      const supabase = createClient();
+      const searchTerm = `%${query.trim()}%`;
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, full_name, avatar_url')
+        .or(`username.ilike.${searchTerm},full_name.ilike.${searchTerm}`)
+        .limit(8);
+      setSearchResults(data || []);
+      setShowSearchResults(true);
+    }, 300);
+  }, []);
+  const [language, setLanguage] = useState<'en' | 'np'>(() => {
+    if (typeof window === 'undefined') return 'en';
+    const stored = window.localStorage.getItem('awaaz-lang');
+    return stored === 'np' ? 'np' : 'en';
+  });
   const labels = language === 'np'
     ? {
-        feed: 'फिड',
-        raiseVoice: 'आवाज उठाउनुहोस्',
-        signIn: 'लगइन',
-        homeFeed: 'होम',
-        myProfile: 'मेरो प्रोफाइल',
-        signOut: 'साइन आउट',
-        searchPlaceholder: 'आवाज नेपालमा खोज्नुहोस्',
-        titleHome: 'होम',
-        create: 'पोस्ट गर्नुहोस्',
-      }
+      feed: 'फिड',
+      raiseVoice: 'समस्या उठाउनुहोस्',
+      signIn: 'लगइन',
+      homeFeed: 'होम',
+      myProfile: 'मेरो प्रोफाइल',
+      signOut: 'साइन आउट',
+      searchPlaceholder: 'गफगाफमा खोज्नुहोस्',
+      titleHome: 'होम',
+      create: 'पोस्ट गर्नुहोस्',
+    }
     : {
-        feed: 'Feed',
-        raiseVoice: 'Raise Voice',
-        signIn: 'Log In',
-        homeFeed: 'Home',
-        myProfile: 'My Profile',
-        signOut: 'Log Out',
-        searchPlaceholder: 'Search Awaaz Nepal',
-        titleHome: 'Home',
-        create: 'Create Post',
-      };
+      feed: 'Feed',
+      raiseVoice: 'Raise Issue',
+      signIn: 'Log In',
+      homeFeed: 'Home',
+      myProfile: 'My Profile',
+      signOut: 'Log Out',
+      searchPlaceholder: 'Search GuffGaff',
+      titleHome: 'Home',
+      create: 'Create Post',
+    };
 
   useEffect(() => {
-    const stored = localStorage.getItem('awaaz-lang');
-    if (stored === 'np' || stored === 'en') {
-      setLanguage(stored);
-      document.documentElement.lang = stored === 'np' ? 'ne' : 'en';
-    }
-  }, []);
+    document.documentElement.lang = language === 'np' ? 'ne' : 'en';
+  }, [language]);
 
   const toggleLanguage = () => {
     const next = language === 'en' ? 'np' : 'en';
@@ -62,6 +93,19 @@ export default function Navbar() {
     document.documentElement.lang = next === 'np' ? 'ne' : 'en';
     window.dispatchEvent(new Event('language-change'));
   };
+
+  useEffect(() => {
+    const syncLanguage = () => {
+      const stored = window.localStorage.getItem('awaaz-lang');
+      setLanguage(stored === 'np' ? 'np' : 'en');
+    };
+    window.addEventListener('storage', syncLanguage);
+    window.addEventListener('language-change', syncLanguage);
+    return () => {
+      window.removeEventListener('storage', syncLanguage);
+      window.removeEventListener('language-change', syncLanguage);
+    };
+  }, []);
 
   useEffect(() => {
     if (!profileMenuOpen) return;
@@ -86,9 +130,40 @@ export default function Navbar() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    handleSearch(e.target.value);
+                  }}
+                  onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
+                  onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
                   placeholder={labels.searchPlaceholder}
                   className="w-60 pl-10 pr-4 py-2 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] border-none rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500 dark:placeholder-[#b0b3b8] focus:ring-2 focus:ring-[#1877F2]/30 transition-all"
                 />
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-[#242526] rounded-xl shadow-xl border border-gray-200 dark:border-[#393a3b] overflow-hidden z-50">
+                    {searchResults.map((result) => (
+                      <Link
+                        key={result.id}
+                        href={`/profile/${result.id}`}
+                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+                        onClick={() => { setShowSearchResults(false); setSearchQuery(''); }}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1877F2] to-blue-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          {result.avatar_url ? (
+                            <img src={result.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            result.full_name?.[0]?.toUpperCase() || 'U'
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-[#e4e6eb] truncate">{result.full_name}</p>
+                          <p className="text-xs text-gray-500 dark:text-[#b0b3b8]">@{result.username}</p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -116,11 +191,7 @@ export default function Navbar() {
 
           {/* Right: Actions */}
           <div className="hidden md:flex items-center gap-1">
-            {user && (
-              <button className="w-10 h-10 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center hover:bg-[#d8dadf] dark:hover:bg-[#4e4f50] transition-colors">
-                <Bell className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" />
-              </button>
-            )}
+            {user && <NotificationBadge />}
             <button
               onClick={toggleLanguage}
               className="w-10 h-10 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center hover:bg-[#d8dadf] dark:hover:bg-[#4e4f50] transition-colors text-xs font-bold text-gray-800 dark:text-[#e4e6eb]"
@@ -191,7 +262,7 @@ export default function Navbar() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden pb-3 pt-2 space-y-1">
+          <div className="md:hidden pb-3 pt-2 space-y-1 border-t border-gray-200 dark:border-[#393a3b]">
             <div className="relative mb-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input type="text" placeholder={labels.searchPlaceholder} className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500" />

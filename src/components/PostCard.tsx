@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
-import { MessageCircle, Share2, Clock, MapPin, Flag, Trash2, MoreHorizontal, Globe } from 'lucide-react';
+import { MessageCircle, Share2, MapPin, Flag, Trash2, MoreHorizontal, Globe, Repeat2 } from 'lucide-react';
 import SupportButton from './SupportButton';
 import DislikeButton from './DislikeButton';
+import RepostButton from './RepostButton';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthProvider';
 
@@ -33,6 +34,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
 
@@ -61,15 +63,48 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
     if (navigator.share) {
       try {
         await navigator.share({ title: post.title, url });
-      } catch {}
-    } else {
+        return;
+      } catch {
+        // User cancelled share dialog.
+      }
+    }
+
+    try {
       await navigator.clipboard.writeText(url);
       alert('Link copied!');
+    } catch {
+      window.prompt('Copy this link:', url);
     }
   };
 
+  useEffect(() => {
+    if (!showMenu) return;
+    const closeMenu = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', closeMenu);
+    return () => document.removeEventListener('mousedown', closeMenu);
+  }, [showMenu]);
+
   return (
-    <article className="bg-white dark:bg-[#242526] rounded-lg shadow-sm dark:shadow-none border-none">
+    <article className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      {/* Repost Header */}
+      {post.repost_user && (
+        <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-sm text-gray-500 dark:text-[#b0b3b8]">
+          <Repeat2 className="w-4 h-4 text-green-500" />
+          <Link href={`/profile/${post.repost_user.id}`} className="font-semibold hover:underline">
+            {post.repost_user.full_name}
+          </Link>
+          <span>reposted</span>
+          {post.repost_caption && (
+            <span className="text-gray-700 dark:text-[#e4e6eb] italic truncate max-w-[200px]">
+              &mdash; &ldquo;{post.repost_caption}&rdquo;
+            </span>
+          )}
+        </div>
+      )}
       {/* Header */}
       <div className="p-4 pb-0">
         <div className="flex items-start justify-between">
@@ -110,7 +145,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
             >
               {urgency.label}
             </span>
-            <div className="relative">
+            <div ref={menuRef} className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
@@ -157,7 +192,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
           </h2>
         </Link>
 
-        <p className="text-gray-700 dark:text-[#b0b3b8] text-[15px] leading-relaxed line-clamp-3">
+        <p className="text-gray-700 dark:text-[#b0b3b8] text-[15px] leading-relaxed line-clamp-4 mt-1">
           {post.content}
         </p>
       </div>
@@ -168,7 +203,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
           <img
             src={post.image_url}
             alt={post.title}
-            className="w-full max-h-[500px] object-cover"
+            className="w-full max-h-[500px] object-cover border-y border-gray-100 dark:border-[#393a3b]"
           />
         </div>
       )}
@@ -176,27 +211,27 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
       {/* Reaction counts */}
       <div className="px-4 py-2 flex items-center justify-between text-xs text-gray-500 dark:text-[#b0b3b8]">
         <div className="flex items-center gap-1">
-          {(post.supports_count > 0) && (
-            <span className="flex items-center gap-1">
-              <span className="w-[18px] h-[18px] bg-[#1877F2] rounded-full flex items-center justify-center text-white text-[10px]">👍</span>
-              {post.supports_count}
+          {(post.supports_count > 0 || post.dislikes_count > 0) && (
+            <span className="flex items-center gap-1.5">
+              <div className="flex -space-x-1 border-r border-gray-200 dark:border-[#393a3b] pr-2">
+                {post.supports_count > 0 && <span className="relative z-10 w-[18px] h-[18px] bg-gradient-to-r from-[#1877F2] to-blue-400 rounded-full flex items-center justify-center text-white text-[10px] ring-2 ring-white dark:ring-[#242526] shadow-sm">👍</span>}
+                {post.dislikes_count > 0 && <span className="relative z-0 w-[18px] h-[18px] bg-gradient-to-r from-red-500 to-red-400 rounded-full flex items-center justify-center text-white text-[10px] ring-2 ring-white dark:ring-[#242526] shadow-sm">👎</span>}
+              </div>
+              <span className="font-medium">{post.supports_count + post.dislikes_count}</span>
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-medium">
           {post.comments_count > 0 && (
             <Link href={`/post/${post.id}`} className="hover:underline">
               {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
             </Link>
           )}
-          {post.dislikes_count > 0 && (
-            <span>{post.dislikes_count} dislike{post.dislikes_count !== 1 ? 's' : ''}</span>
-          )}
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="mx-4 py-1 flex items-center border-t border-gray-200 dark:border-[#393a3b]">
+      <div className="mx-2 sm:mx-4 py-1.5 flex items-center border-t border-gray-100 dark:border-[#393a3b]">
         <SupportButton
           postId={post.id}
           initialCount={post.supports_count}
@@ -210,18 +245,23 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
         <Link
           href={`/post/${post.id}`}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-all group"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span>Comment</span>
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline">Comment</span>
         </Link>
+
+        <RepostButton
+          postId={post.id}
+          postAuthorId={post.author_id}
+        />
 
         <button
           onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-all group"
         >
-          <Share2 className="w-5 h-5" />
-          <span>Share</span>
+          <Share2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+          <span className="hidden sm:inline">Share</span>
         </button>
       </div>
     </article>

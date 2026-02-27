@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       const meta = user.user_metadata ?? {};
       
       // Generate base username
-      let baseUsername =
+      const baseUsername =
         meta.user_name ||
         meta.preferred_username ||
         (meta.full_name

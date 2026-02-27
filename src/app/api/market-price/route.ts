@@ -16,6 +16,21 @@ interface StockData {
   change_percent: number;
 }
 
+interface CryptoData {
+  bitcoin?: {
+    usd: number;
+    usd_24h_change: number;
+  };
+  ethereum?: {
+    usd: number;
+    usd_24h_change: number;
+  };
+  solana?: {
+    usd: number;
+    usd_24h_change: number;
+  };
+}
+
 const isRateLimited = (ip: string): boolean => {
   const now = Date.now();
   const data = requestMap.get(ip);
@@ -53,7 +68,7 @@ export async function GET(request: Request) {
       }
     );
 
-    let cryptoData: any = {};
+    let cryptoData: CryptoData = {};
     if (cryptoRes.ok) {
       cryptoData = await cryptoRes.json();
     }

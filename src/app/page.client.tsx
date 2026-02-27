@@ -389,7 +389,7 @@ export default function HomeClient() {
         if (!active) return;
         setGoldItems(Array.isArray(data?.items) ? data.items : []);
         setGoldUpdatedAt(data?.updated_at ?? '');
-      } catch (error) {
+      } catch {
         if (!active) return;
         setGoldError(content.goldError);
         setGoldItems([]);
@@ -418,7 +418,7 @@ export default function HomeClient() {
       <div className="particle-bg" aria-hidden />
 
       {/* News Bar */}
-      <section className="bg-gray-900 text-white py-2 shimmer-bar">
+      <section className="bg-gray-900 text-white py-2 shimmer-bar overflow-hidden">
         <div className="max-w-5xl mx-auto px-4 flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-red-300">
             <Newspaper className="w-4 h-4" />
@@ -440,9 +440,9 @@ export default function HomeClient() {
         </div>
       </section>
 
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4">
         {/* HERO */}
-        <section className="relative mb-14 overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-white via-red-50/30 to-blue-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-blue-950/20 animate-hero-glow mt-6 bg-sweep">
+        <section className="relative mb-12 sm:mb-14 overflow-hidden rounded-3xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-white via-red-50/30 to-blue-50/30 dark:from-gray-900 dark:via-red-950/20 dark:to-blue-950/20 animate-hero-glow mt-4 sm:mt-6 bg-sweep">
           <div className="flex flex-col-reverse sm:flex-row items-center gap-4 sm:gap-6 p-6 md:p-10">
             <div className="flex-1 text-center md:text-left z-10 animate-hero-fade-up">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-full text-sm font-medium mb-4 animate-float-slow">
@@ -504,7 +504,7 @@ export default function HomeClient() {
                 {content.quickLoginDesc}
               </p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex w-full sm:w-auto flex-wrap gap-3">
               <Link
                 href="/auth/login"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors"
@@ -568,7 +568,7 @@ export default function HomeClient() {
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">{content.latestNews}</h3>
               <div className="space-y-3">
                 {news.length === 0 ? (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">No news yet.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{language === 'np' ? 'अहिलेसम्म कुनै समाचार छैन।' : 'No news yet.'}</p>
                 ) : (
                   news.map((item) => (
                     <div key={item.id} className="flex flex-col gap-1 border-b border-gray-100 dark:border-gray-800 pb-3 last:border-0 last:pb-0">
@@ -587,11 +587,15 @@ export default function HomeClient() {
 
             <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-gradient-to-br from-red-50 to-blue-50 dark:from-red-950/30 dark:to-blue-950/30 p-6 shadow-sm hover-float flex flex-col items-center justify-center text-center">
               <Megaphone className="w-10 h-10 text-red-500 mb-3" />
-              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">Want to post news or raise an issue?</h3>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">
+                {language === 'np' ? 'समाचार पोस्ट गर्न वा समस्या उठाउन चाहनुहुन्छ?' : 'Want to post news or raise an issue?'}
+              </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 max-w-xs">
-                Create a free account to post news updates, raise civic problems, and support issues in your community.
+                {language === 'np'
+                  ? 'निःशुल्क खाता बनाएर समाचार पोस्ट गर्नुहोस्, नागरिक समस्या उठाउनुहोस्, र समुदायका मुद्दाहरूलाई समर्थन गर्नुहोस्।'
+                  : 'Create a free account to post news updates, raise civic problems, and support issues in your community.'}
               </p>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap justify-center gap-3">
                 <Link
                   href="/auth/register"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-blue-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
@@ -658,7 +662,7 @@ export default function HomeClient() {
 
         {/* Top Posts */}
         <section className="mb-16 section-reveal-delay-1">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
             <div>
               <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">{content.topIssuesTitle}</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{content.topIssuesSubtitle}</p>
@@ -764,18 +768,18 @@ export default function HomeClient() {
             <div>
               <p className="font-semibold text-gray-900 dark:text-white mb-2">{content.pagesRights}</p>
               <div className="space-y-1 text-gray-500 dark:text-gray-400">
-                <Link href="/about" className="hover:text-gray-900 dark:hover:text-white">About</Link>
-                <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white">Terms of Service</Link>
-                <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white">Privacy Policy</Link>
-                <Link href="/feed" className="hover:text-gray-900 dark:hover:text-white">All Issues</Link>
+                <Link href="/about" className="block hover:text-gray-900 dark:hover:text-white">About</Link>
+                <Link href="/terms" className="block hover:text-gray-900 dark:hover:text-white">Terms of Service</Link>
+                <Link href="/privacy" className="block hover:text-gray-900 dark:hover:text-white">Privacy Policy</Link>
+                <Link href="/feed" className="block hover:text-gray-900 dark:hover:text-white">All Issues</Link>
               </div>
             </div>
             <div>
               <p className="font-semibold text-gray-900 dark:text-white mb-2">{content.quickLinks}</p>
               <div className="space-y-1 text-gray-500 dark:text-gray-400">
-                <Link href="/auth/login" className="hover:text-gray-900 dark:hover:text-white">Login</Link>
-                <Link href="/auth/register" className="hover:text-gray-900 dark:hover:text-white">Register</Link>
-                <Link href="/post/create" className="hover:text-gray-900 dark:hover:text-white">Raise a Voice</Link>
+                <Link href="/auth/login" className="block hover:text-gray-900 dark:hover:text-white">Login</Link>
+                <Link href="/auth/register" className="block hover:text-gray-900 dark:hover:text-white">Register</Link>
+                <Link href="/post/create" className="block hover:text-gray-900 dark:hover:text-white">Raise a Voice</Link>
               </div>
             </div>
             <div>

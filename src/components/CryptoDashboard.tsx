@@ -17,10 +17,11 @@ function TradingViewWidget({ id, symbol }: { id: string; symbol: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Clear previous content
-    containerRef.current.innerHTML = '';
+    container.innerHTML = '';
 
     const script = document.createElement('script');
     script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js';
@@ -36,10 +37,10 @@ function TradingViewWidget({ id, symbol }: { id: string; symbol: string }) {
       autosize: false,
       chartOnly: false,
     });
-    containerRef.current.appendChild(script);
+    container.appendChild(script);
 
     return () => {
-      if (containerRef.current) containerRef.current.innerHTML = '';
+      container.innerHTML = '';
     };
   }, [id, symbol]);
 
@@ -165,7 +166,7 @@ function CryptoCard({
 
 export function CryptoDashboard() {
   return (
-    <section className="relative py-20 overflow-hidden bg-black/40 dark:bg-black/60">
+    <section className="relative py-12 sm:py-16 md:py-20 overflow-hidden bg-black/40 dark:bg-black/60">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -191,11 +192,11 @@ export function CryptoDashboard() {
         />
       </div>
 
-      <div className="container relative mx-auto max-w-7xl px-6">
+      <div className="container relative mx-auto max-w-7xl px-4 sm:px-6">
         {/* Header */}
-        <div className="mb-16 text-center">
+        <div className="mb-10 sm:mb-16 text-center">
           <div
-            className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-xl text-sm font-bold uppercase tracking-wider"
+            className="inline-flex items-center gap-2 mb-4 px-3 sm:px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-xl text-xs sm:text-sm font-bold uppercase tracking-wider"
             style={{ animation: 'slideIn 0.6s ease-out' }}
           >
             <span className="relative flex h-2 w-2">
@@ -206,7 +207,7 @@ export function CryptoDashboard() {
           </div>
 
           <h2
-            className="text-5xl md:text-6xl font-black text-white mb-4 leading-tight"
+            className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 leading-tight"
             style={{ animation: 'slideIn 0.6s ease-out 0.1s backwards' }}
           >
             Crypto & Stock{' '}
@@ -216,7 +217,7 @@ export function CryptoDashboard() {
           </h2>
 
           <p
-            className="text-lg text-white/60 max-w-2xl mx-auto"
+            className="text-sm sm:text-base md:text-lg text-white/60 max-w-2xl mx-auto"
             style={{ animation: 'slideIn 0.6s ease-out 0.2s backwards' }}
           >
             Professional-grade market analysis powered by TradingView. Track 8 assets in real-time with interactive charts and technical indicators.
@@ -224,14 +225,14 @@ export function CryptoDashboard() {
         </div>
 
         {/* Chart Grid - Responsive layout */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 auto-rows-max">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 auto-rows-max">
           {WIDGETS.map((w, i) => (
             <CryptoCard key={w.id} widget={w} index={i} />
           ))}
         </div>
 
         {/* Info section */}
-        <div className="mt-16 grid md:grid-cols-3 gap-6">
+        <div className="mt-12 sm:mt-16 grid md:grid-cols-3 gap-4 sm:gap-6">
           {[
             { icon: '⚡', title: 'Real-Time Data', desc: 'Updated every second with live market prices' },
             { icon: '📊', title: 'Advanced Charts', desc: 'Professional technical analysis tools' },
@@ -249,7 +250,7 @@ export function CryptoDashboard() {
         </div>
 
         {/* Disclaimer */}
-        <div className="mt-12 p-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
+        <div className="mt-8 sm:mt-12 p-4 sm:p-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 backdrop-blur-xl">
           <p className="text-xs text-amber-100 leading-relaxed">
             <strong>⚠️ Disclaimer:</strong> Market data is for informational purposes only. Prices may be delayed. Cryptocurrency and stock markets carry significant risk. Always consult a licensed financial advisor before making investment decisions. Past performance does not guarantee future results.
           </p>

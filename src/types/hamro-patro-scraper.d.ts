@@ -6,7 +6,7 @@ declare module 'hamro-patro-scraper' {
       value: string;
     }>;
     updatedAt?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   export function getGoldPrices(): Promise<GoldPrice>;

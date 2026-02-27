@@ -156,35 +156,33 @@ export default function FeedPage() {
   }, [category, sort, supabase]);
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a]">
+    <div className="min-h-[100dvh] bg-[#f0f2f5] dark:bg-[#18191a]">
       <div className="max-w-[680px] mx-auto px-4 py-6">
         {/* Page Header */}
-        <div className="bg-white dark:bg-[#242526] rounded-lg shadow-sm p-4 mb-4">
+        <div className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] p-4 mb-5 hover:shadow-md transition-shadow">
           <h1 className="text-[20px] font-bold text-gray-900 dark:text-[#e4e6eb]">Public Feed</h1>
           <p className="text-[13px] text-gray-500 dark:text-[#b0b3b8] mt-0.5">Voices raised by citizens across Nepal</p>
 
           {/* Sort Tabs */}
-          <div className="flex mt-3 pt-3 border-t border-gray-200 dark:border-[#393a3b]">
+          <div className="flex mt-3 pt-3 border-t border-gray-100 dark:border-[#393a3b]">
             <button
               onClick={() => setSort('latest')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold transition-colors ${
-                sort === 'latest'
-                  ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951]'
-                  : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${sort === 'latest'
+                ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951] shadow-sm'
+                : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                }`}
             >
-              <Clock className="w-5 h-5" />
+              <Clock className={`w-5 h-5 ${sort === 'latest' ? 'animate-pulse' : ''}`} />
               Latest
             </button>
             <button
               onClick={() => setSort('trending')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold transition-colors ${
-                sort === 'trending'
-                  ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951]'
-                  : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${sort === 'trending'
+                ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951] shadow-sm'
+                : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                }`}
             >
-              <TrendingUp className="w-5 h-5" />
+              <TrendingUp className={`w-5 h-5 ${sort === 'trending' ? 'animate-pulse' : ''}`} />
               Trending
             </button>
           </div>
@@ -233,7 +231,7 @@ export default function FeedPage() {
               <button
                 onClick={() => fetchPosts(true)}
                 disabled={loadingMore}
-                className="w-full py-3 rounded-lg bg-white dark:bg-[#242526] shadow-sm text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
+                className="w-full py-3.5 rounded-xl bg-white dark:bg-[#242526] shadow-sm border border-gray-100 dark:border-[#393a3b] text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
               >
                 {loadingMore ? (
                   <span className="flex items-center justify-center gap-2">

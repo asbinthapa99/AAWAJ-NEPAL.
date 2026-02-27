@@ -156,7 +156,6 @@ export default function CreatePostPage() {
       district: district || null,
       image_url,
     };
-    console.log('Creating post with payload:', postPayload);
 
     const { error: postError, data: post } = await supabase
       .from('posts')
@@ -169,7 +168,6 @@ export default function CreatePostPage() {
       setError(postError.message + (postError.details ? ' — ' + postError.details : '') + (postError.hint ? ' (Hint: ' + postError.hint + ')' : ''));
       setLoading(false);
     } else {
-      console.log('Post created successfully:', post.id);
       router.push(`/post/${post.id}`);
     }
   };

@@ -17,8 +17,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
-  signOut: async () => {},
-  refreshProfile: async () => {},
+  signOut: async () => { },
+  refreshProfile: async () => { },
 });
 
 export function useAuth() {
@@ -41,6 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (data) {
+        // Check if user is banned
+        if (data.banned_at) {
+          await supabase.auth.signOut();
+          setUser(null);
+          setProfile(null);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth/login?error=banned';
+          }
+          return null;
+        }
         setProfile(data);
         return data;
       }
@@ -99,24 +109,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getUser = async () => {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
+      setLoading(false); // Unblock the UI immediately
+
       if (currentUser) {
-        await fetchProfile(currentUser);
+        fetchProfile(currentUser); // Fetch profile in the background
       }
-      setLoading(false);
     };
 
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setLoading(false);
+
         if (currentUser) {
-          await fetchProfile(currentUser);
+          fetchProfile(currentUser);
         } else {
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 

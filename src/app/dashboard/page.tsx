@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import PostCard from '@/components/PostCard';
 import CategoryFilter from '@/components/CategoryFilter';
+import CreatePostBox from '@/components/CreatePostBox';
+import RaiseIssueModal from '@/components/RaiseIssueModal';
 import { Post, PostCategory, News } from '@/lib/types';
 import {
   Megaphone,
@@ -40,6 +42,7 @@ export default function DashboardPage() {
   const [goldUpdatedAt, setGoldUpdatedAt] = useState<string>('');
   const [goldLoading, setGoldLoading] = useState(true);
   const [goldError, setGoldError] = useState('');
+  const [showIssueModal, setShowIssueModal] = useState(false);
 
   const insertBufferRef = useRef<Post[]>([]);
   const insertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -251,16 +254,16 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f0f2f5] dark:bg-[#18191a]">
+    <div className="min-h-[100dvh] bg-[#f0f2f5] dark:bg-[#18191a]">
       <div className="max-w-[1920px] mx-auto flex gap-0">
         {/* Left Sidebar */}
         <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto p-4 pt-6">
           <div className="space-y-1">
             <Link
               href={`/profile/${user.id}`}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/60 dark:hover:bg-[#3a3b3c] transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/60 dark:hover:bg-[#3a3b3c] transition-colors"
             >
-              <div className="w-9 h-9 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold">
+              <div className="w-9 h-9 bg-gradient-to-br from-[#1877F2] to-blue-400 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
                 {profile?.full_name?.[0]?.toUpperCase() || 'U'}
               </div>
               <span className="text-[15px] font-semibold text-gray-900 dark:text-[#e4e6eb]">
@@ -292,7 +295,7 @@ export default function DashboardPage() {
               <div className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center">
                 <Megaphone className="w-5 h-5 text-orange-500" />
               </div>
-              <span className="text-[15px] font-medium text-gray-800 dark:text-[#e4e6eb]">About Awaaz</span>
+              <span className="text-[15px] font-medium text-gray-800 dark:text-[#e4e6eb]">About GuffGaff</span>
             </Link>
           </div>
 
@@ -310,14 +313,13 @@ export default function DashboardPage() {
                 <button
                   key={item.cat}
                   onClick={() => { setCategory(item.cat); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left transition-colors ${
-                    category === item.cat
-                      ? 'bg-[#e7f3ff] dark:bg-[#263951] text-[#1877F2]'
-                      : 'hover:bg-white/60 dark:hover:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb]'
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left transition-colors font-medium ${category === item.cat
+                    ? 'bg-gradient-to-r from-[#e7f3ff] to-transparent dark:from-[#263951] text-[#1877F2]'
+                    : 'hover:bg-white/60 dark:hover:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb]'
+                    }`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span className="text-[14px] font-medium">{item.label}</span>
+                  <span className="text-[14px]">{item.label}</span>
                 </button>
               ))}
             </div>
@@ -356,45 +358,24 @@ export default function DashboardPage() {
 
         {/* Main Feed Column */}
         <div className="flex-1 max-w-[680px] mx-auto py-6 px-4">
-          {/* Create Post Card */}
-          <div className="bg-white dark:bg-[#242526] rounded-lg shadow-sm mb-4 p-3">
-            <div className="flex items-center gap-3">
-              <Link href={`/profile/${user.id}`}>
-                <div className="w-10 h-10 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                  {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-                </div>
-              </Link>
-              <Link
-                href="/post/create"
-                className="flex-1 px-4 py-2.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-full text-[15px] text-gray-500 dark:text-[#b0b3b8] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50] transition-colors cursor-pointer text-left"
-              >
-                Raise your voice, {profile?.full_name?.split(' ')[0] || 'User'}...
-              </Link>
-            </div>
-            <div className="flex items-center mt-3 pt-3 border-t border-gray-200 dark:border-[#393a3b]">
-              <Link
-                href="/post/create"
-                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors text-sm font-semibold text-[#1877F2]"
-              >
-                <Megaphone className="w-5 h-5 text-[#1877F2]" />
-                <span>Raise a Voice</span>
-              </Link>
-            </div>
-          </div>
+          {/* Create Post Box */}
+          <CreatePostBox
+            onPostCreated={() => fetchPosts()}
+            onRaiseIssue={() => setShowIssueModal(true)}
+          />
 
           {/* Feed Section Tabs */}
-          <div className="bg-white dark:bg-[#242526] rounded-lg shadow-sm mb-4 p-1 flex">
+          <div className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] mb-5 p-1 flex">
             {sections.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-md text-sm font-semibold transition-colors ${
-                  activeSection === s.id
-                    ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951]'
-                    : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
-                }`}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all ${activeSection === s.id
+                  ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951] shadow-sm'
+                  : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                  }`}
               >
-                <s.icon className="w-5 h-5" />
+                <s.icon className={`w-5 h-5 ${activeSection === s.id ? 'animate-pulse' : ''}`} />
                 {s.label}
               </button>
             ))}
@@ -443,7 +424,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => fetchPosts(true)}
                   disabled={loadingMore}
-                  className="w-full py-3 rounded-lg bg-white dark:bg-[#242526] shadow-sm text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl bg-white dark:bg-[#242526] shadow-sm border border-gray-100 dark:border-[#393a3b] text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
                 >
                   {loadingMore ? (
                     <span className="flex items-center justify-center gap-2">
@@ -523,11 +504,10 @@ export default function DashboardPage() {
                 <button
                   key={item.cat}
                   onClick={() => { setCategory(item.cat); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    category === item.cat
-                      ? 'bg-[#e7f3ff] dark:bg-[#263951] text-[#1877F2]'
-                      : 'bg-[#f0f2f5] dark:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50]'
-                  }`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${category === item.cat
+                    ? 'bg-[#e7f3ff] dark:bg-[#263951] text-[#1877F2]'
+                    : 'bg-[#f0f2f5] dark:bg-[#3a3b3c] text-gray-700 dark:text-[#e4e6eb] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50]'
+                    }`}
                 >
                   {item.label}
                 </button>
@@ -537,11 +517,19 @@ export default function DashboardPage() {
 
           <div className="mt-6 pt-4 border-t border-gray-200 dark:border-[#393a3b]">
             <p className="text-xs text-gray-400 dark:text-[#b0b3b8]">
-              Awaaz Nepal · 2025 · <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link>
+              GuffGaff · 2025 · <Link href="/privacy" className="hover:underline">Privacy</Link> · <Link href="/terms" className="hover:underline">Terms</Link>
             </p>
           </div>
         </div>
       </div>
+
+      {/* Raise Issue Modal */}
+      {showIssueModal && (
+        <RaiseIssueModal
+          onClose={() => setShowIssueModal(false)}
+          onCreated={() => fetchPosts()}
+        />
+      )}
     </div>
   );
 }

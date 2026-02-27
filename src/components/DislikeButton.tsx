@@ -91,6 +91,7 @@ export default function DislikeButton({
       >
         <ThumbsDown className="w-5 h-5" />
         <span>Dislike</span>
+        <span className="text-xs">({count})</span>
       </button>
       {error && (
         <span className="text-xs text-red-600 dark:text-red-400 text-center">{error}</span>

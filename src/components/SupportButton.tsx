@@ -96,6 +96,7 @@ export default function SupportButton({
           fill={supported ? 'currentColor' : 'none'}
         />
         <span>Like</span>
+        <span className="text-xs">({count})</span>
       </button>
       {error && (
         <span className="text-xs text-red-600 dark:text-red-400 text-center">{error}</span>

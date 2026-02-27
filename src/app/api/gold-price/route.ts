@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-// @ts-ignore - no type definitions available for this package
 import { getGoldPrices } from 'hamro-patro-scraper';
 
 type RateEntry = {
@@ -11,6 +10,11 @@ type GoldItem = {
   id: number;
   label: string;
   value: string;
+};
+
+type GoldPriceResponse = {
+  goldPrices?: Array<{ id?: number; price?: string }>;
+  updatedAt?: string;
 };
 
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
@@ -76,10 +80,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getGoldPrices();
-    // @ts-ignore - goldPrices property is available at runtime
+    const scraper = getGoldPrices as () => Promise<GoldPriceResponse>;
+    const data = await scraper();
     const items = normalizeItems(Array.isArray(data?.goldPrices) ? data.goldPrices : []);
-    // @ts-ignore - updatedAt property is available at runtime
     const updatedAt = normalizeUpdatedAt(String(data?.updatedAt ?? ''));
     const payload = {
       items,
@@ -96,7 +99,7 @@ export async function GET(request: Request) {
         'Cache-Control': 'public, max-age=120, stale-while-revalidate=60',
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch gold/silver prices' }, { status: 502 });
   }
 }
