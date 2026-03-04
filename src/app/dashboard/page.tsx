@@ -80,7 +80,7 @@ export default function DashboardPage() {
 
       let query = supabase
         .from('posts')
-        .select('*, author:profiles(id, full_name, username, avatar_url)');
+        .select('*, author:profiles!posts_author_id_fkey(id, full_name, username, avatar_url)');
 
       if (category !== 'all') query = query.eq('category', category);
 
@@ -220,8 +220,8 @@ export default function DashboardPage() {
   return (
     <div className="min-h-[100dvh] bg-background">
       <div className="max-w-[1920px] mx-auto flex gap-0">
-        {/* Left Sidebar */}
-        <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto p-4 pt-6">
+        {/* Left Sidebar — desktop only */}
+        <div className="hidden lg:block w-[280px] flex-shrink-0 sticky top-[58px] h-[calc(100vh-58px)] overflow-y-auto p-4 pt-6">
           <div className="space-y-1">
             <Link
               href={`/profile/${user.id}`}
@@ -293,16 +293,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Feed Column */}
-        <div className="flex-1 max-w-[680px] mx-auto py-6 px-4">
-          {/* Create Post Box */}
-          <CreatePostBox
-            onPostCreated={() => fetchPosts()}
-            onRaiseIssue={() => setShowIssueModal(true)}
-          />
+        <div className="flex-1 max-w-[680px] mx-auto py-0 md:py-6 px-0 md:px-4">
+          {/* Create Post Box — hidden on mobile, use + button in bottom nav */}
+          <div className="hidden md:block">
+            <CreatePostBox
+              onPostCreated={() => fetchPosts()}
+              onRaiseIssue={() => setShowIssueModal(true)}
+            />
+          </div>
 
-          {/* Feed Section Tabs */}
-          <div className="mb-5 p-1 flex rounded-2xl border border-border/50"
-            style={{ background: 'hsl(var(--muted)/0.4)' }}>
+          {/* Feed Section Tabs — compact on mobile */}
+          <div className="sticky top-[58px] md:top-auto z-30 mb-0 md:mb-5 p-1 flex border-b md:border border-border/50 md:rounded-2xl"
+            style={{ background: 'hsl(var(--background)/0.95)', backdropFilter: 'blur(12px)' }}>
             {sections.map((s) => (
               <button
                 key={s.id}
@@ -324,23 +326,23 @@ export default function DashboardPage() {
           </div>
 
           {/* Mobile Category Filter */}
-          <div className="lg:hidden mb-4">
+          <div className="lg:hidden mb-0 px-3 pt-2">
             <CategoryFilter selected={category} onChange={setCategory} />
           </div>
 
           {/* Posts Feed */}
           {fetchError && (
-            <div className="mb-4">
+            <div className="mb-4 px-3 md:px-0">
               <Alert variant="error">⚠️ {fetchError}</Alert>
             </div>
           )}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-16">
+            <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
               <p className="text-sm text-muted-foreground">Loading your feed...</p>
             </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-16 bg-card rounded-xl shadow-sm border border-border">
+            <div className="text-center py-20 mx-3 md:mx-0 bg-card rounded-xl shadow-sm border border-border">
               <Megaphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground mb-2">No posts yet</h3>
               <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
@@ -357,17 +359,18 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-0 md:space-y-4">
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
 
               {hasMore && (
-                <button
-                  onClick={() => fetchPosts(true)}
-                  disabled={loadingMore}
-                  className="w-full py-3.5 rounded-xl bg-card shadow-sm border border-border text-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50"
-                >
+                <div className="px-3 md:px-0 py-3">
+                  <button
+                    onClick={() => fetchPosts(true)}
+                    disabled={loadingMore}
+                    className="w-full py-3.5 rounded-xl bg-card shadow-sm border border-border text-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50"
+                  >
                   {loadingMore ? (
                     <span className="flex items-center justify-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -377,13 +380,14 @@ export default function DashboardPage() {
                     'See More'
                   )}
                 </button>
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* Right Sidebar */}
-        <div className="hidden xl:block w-[280px] flex-shrink-0 sticky top-14 h-[calc(100vh-56px)] overflow-y-auto p-4 pt-6">
+        <div className="hidden xl:block w-[280px] flex-shrink-0 sticky top-[58px] h-[calc(100vh-58px)] overflow-y-auto p-4 pt-6">
           {/* Community News */}
           <div className="mb-5">
             <h3 className="text-[17px] font-bold text-foreground mb-3 flex items-center gap-2">

@@ -6,7 +6,7 @@ import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
 import { timeAgo } from '@/lib/utils';
-import { MessageCircle, Share2, MapPin, Flag, Trash2, MoreHorizontal, Globe, Repeat2 } from 'lucide-react';
+import { MessageCircle, Share2, MapPin, Flag, Trash2, MoreHorizontal, Repeat2, Bookmark } from 'lucide-react';
 import SupportButton from './SupportButton';
 import DislikeButton from './DislikeButton';
 import RepostButton from './RepostButton';
@@ -27,6 +27,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [saved, setSaved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
@@ -34,241 +35,128 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   const handleDelete = async () => {
     if (!user || user.id !== post.author_id || deleting) return;
     if (!window.confirm('Delete this post? This action cannot be undone.')) return;
-
     setDeleting(true);
     const supabase = createClient();
     const { error } = await supabase.from('posts').delete().eq('id', post.id);
-    if (error) {
-      alert('Failed to delete post: ' + error.message);
-      setDeleting(false);
-      return;
-    }
-
-    if (onDeleted) {
-      onDeleted(post.id);
-    } else {
-      window.location.reload();
-    }
+    if (error) { alert('Failed to delete post: ' + error.message); setDeleting(false); return; }
+    if (onDeleted) { onDeleted(post.id); } else { window.location.reload(); }
   };
 
   const handleShare = async () => {
     const url = `${window.location.origin}/post/${post.id}`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: post.title, url });
-        return;
-      } catch {
-        // User cancelled share dialog.
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      alert('Link copied!');
-    } catch {
-      window.prompt('Copy this link:', url);
-    }
+    if (navigator.share) { try { await navigator.share({ title: post.title, url }); return; } catch { /* cancelled */ } }
+    try { await navigator.clipboard.writeText(url); alert('Link copied!'); } catch { window.prompt('Copy this link:', url); }
   };
 
   useEffect(() => {
     if (!showMenu) return;
-    const closeMenu = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
+    const closeMenu = (event: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(event.target as Node)) setShowMenu(false); };
     document.addEventListener('mousedown', closeMenu);
     return () => document.removeEventListener('mousedown', closeMenu);
   }, [showMenu]);
 
   return (
     <>
-      <article className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-        {/* Repost Header */}
+      <article className="bg-card border-b border-border/50 md:rounded-2xl md:border md:border-border md:shadow-sm overflow-hidden">
         {post.repost_user && (
-          <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-sm text-muted-foreground">
-            <Repeat2 className="w-4 h-4 text-success" />
-            <Link href={`/profile/${post.repost_user.id}`} className="font-semibold hover:underline">
-              {post.repost_user.full_name}
-            </Link>
+          <div className="px-4 pt-2.5 pb-0 flex items-center gap-2 text-xs text-muted-foreground">
+            <Repeat2 className="w-3.5 h-3.5" />
+            <Link href={`/profile/${post.repost_user.id}`} className="font-semibold hover:underline">{post.repost_user.full_name}</Link>
             <span>reposted</span>
-            {post.repost_caption && (
-              <span className="text-foreground italic truncate max-w-[200px]">
-                &mdash; &ldquo;{post.repost_caption}&rdquo;
-              </span>
-            )}
           </div>
         )}
+
         {/* Header */}
-        <div className="p-4 pb-0">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2.5">
-              <Link href={`/profile/${post.author_id}`}>
-                <Avatar
-                  src={post.author?.avatar_url || undefined}
-                  fallback={post.author?.full_name || 'U'}
-                  size="md"
-                  className="hover:opacity-90 transition-opacity cursor-pointer"
-                />
-              </Link>
-              <div>
-                <Link
-                  href={`/profile/${post.author_id}`}
-                  className="text-sm font-semibold text-foreground hover:underline"
-                >
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Link href={`/profile/${post.author_id}`}>
+              <div className="w-9 h-9 rounded-full ring-2 ring-primary/20 overflow-hidden">
+                <Avatar src={post.author?.avatar_url || undefined} fallback={post.author?.full_name || 'U'} size="sm" />
+              </div>
+            </Link>
+            <div className="leading-tight">
+              <div className="flex items-center gap-1.5">
+                <Link href={`/profile/${post.author_id}`} className="text-[13px] font-bold text-foreground hover:underline">
                   {post.author?.full_name || 'Anonymous'}
                 </Link>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span>{timeAgo(post.created_at)}</span>
-                  <span>·</span>
-                  {post.district && (
-                    <>
-                      <span className="flex items-center gap-0.5">
-                        <MapPin className="w-3 h-3" />
-                        {post.district}
-                      </span>
-                      <span>·</span>
-                    </>
-                  )}
-                  <Globe className="w-3 h-3" />
-                </div>
+                <span className={cn('inline-block w-1.5 h-1.5 rounded-full', category.bgColor)} />
+                <span className="text-[11px] text-muted-foreground font-medium">{category.label}</span>
               </div>
-            </div>
-
-            <div className="flex items-center gap-1">
-              {/* Urgency Badge */}
-              <Badge variant={urgency.label === 'Critical' || urgency.label === 'High' ? 'destructive' : urgency.label === 'Low' ? 'success' : 'warning'}>
-                {urgency.label}
-              </Badge>
-              <div ref={menuRef} className="relative">
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent transition-colors focus-ring"
-                  aria-label="Post options"
-                >
-                  <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-                </button>
-                {showMenu && (
-                  <div className="absolute right-0 top-9 w-48 bg-popover rounded-lg shadow-lg border border-border overflow-hidden z-20 animate-scale-in">
-                    <button
-                      onClick={() => { setShowMenu(false); setShowReport(true); }}
-                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
-                    >
-                      <Flag className="w-4 h-4" /> Report post
-                    </button>
-                    {user?.id === post.author_id && (
-                      <button
-                        onClick={() => { setShowMenu(false); handleDelete(); }}
-                        disabled={deleting}
-                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/5 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete post
-                      </button>
-                    )}
-                  </div>
-                )}
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <span>{timeAgo(post.created_at)}</span>
+                {post.district && (<><span>·</span><span className="flex items-center gap-0.5"><MapPin className="w-2.5 h-2.5" />{post.district}</span></>)}
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="px-4 pt-3 pb-0">
-          {/* Category Tag */}
-          <span
-            className={cn(
-              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium mb-2',
-              category.bgColor, category.color,
-            )}
-          >
-            <span>{category.icon}</span>
-            {category.label}
-          </span>
-
-          <Link href={`/post/${post.id}`}>
-            <h2 className="text-sm font-bold text-foreground mb-1 hover:underline cursor-pointer">
-              {post.title}
-            </h2>
-          </Link>
-
-          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-4 mt-1">
-            {post.content}
-          </p>
+          <div className="flex items-center gap-1">
+            <Badge variant={urgency.label === 'Critical' || urgency.label === 'High' ? 'destructive' : urgency.label === 'Low' ? 'success' : 'warning'}>{urgency.label}</Badge>
+            <div ref={menuRef} className="relative">
+              <button onClick={() => setShowMenu(!showMenu)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+                <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-9 w-48 bg-popover rounded-xl shadow-xl border border-border overflow-hidden z-20" style={{ animation: 'scaleIn 0.12s ease' }}>
+                  <button onClick={() => { setShowMenu(false); setShowReport(true); }} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-accent transition-colors">
+                    <Flag className="w-4 h-4" /> Report
+                  </button>
+                  {user?.id === post.author_id && (
+                    <button onClick={() => { setShowMenu(false); handleDelete(); }} disabled={deleting} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-destructive hover:bg-destructive/5 transition-colors">
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Image */}
         {post.image_url && (
-          <div className="mt-3">
-            <img
-              src={post.image_url}
-              alt={post.title}
-              className="w-full max-h-[500px] object-cover border-y border-border"
-            />
-          </div>
+          <Link href={`/post/${post.id}`}>
+            <div className="relative bg-muted"><img src={post.image_url} alt={post.title} className="w-full max-h-[520px] object-cover" loading="lazy" /></div>
+          </Link>
         )}
 
-        {/* Reaction counts */}
-        <div className="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
+        {/* Action Row */}
+        <div className="px-4 pt-2 flex items-center justify-between">
+          <div className="flex items-center -ml-2">
+            <SupportButton postId={post.id} initialCount={post.supports_count} />
+            <Link href={`/post/${post.id}`} className="flex items-center gap-1 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors group">
+              <MessageCircle className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            </Link>
+            <button onClick={handleShare} className="flex items-center gap-1 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors group">
+              <Share2 className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+            </button>
+            <RepostButton postId={post.id} postAuthorId={post.author_id} />
+          </div>
           <div className="flex items-center gap-1">
-            {(post.supports_count > 0 || post.dislikes_count > 0) && (
-              <span className="flex items-center gap-1.5">
-                <div className="flex -space-x-1 border-r border-border pr-2">
-                  {post.supports_count > 0 && <span className="relative z-10 w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] ring-2 ring-card shadow-sm">👍</span>}
-                  {post.dislikes_count > 0 && <span className="relative z-0 w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-destructive-foreground text-[10px] ring-2 ring-card shadow-sm">👎</span>}
-                </div>
-                <span className="font-medium">{post.supports_count + post.dislikes_count}</span>
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 font-medium">
-            {post.comments_count > 0 && (
-              <Link href={`/post/${post.id}`} className="hover:underline">
-                {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
-              </Link>
-            )}
+            <DislikeButton postId={post.id} initialCount={post.dislikes_count} initialDisliked={post.user_has_disliked} />
+            <button onClick={() => setSaved(!saved)} className="p-2 rounded-lg text-muted-foreground hover:text-foreground transition-all active:scale-90">
+              <Bookmark className="w-[22px] h-[22px]" strokeWidth={1.5} fill={saved ? 'currentColor' : 'none'} />
+            </button>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="mx-2 sm:mx-4 py-1.5 flex items-center border-t border-border">
-          <SupportButton
-            postId={post.id}
-            initialCount={post.supports_count}
-          />
+        {/* Likes */}
+        {post.supports_count > 0 && (
+          <div className="px-4 pt-1"><p className="text-[13px] font-bold text-foreground">{post.supports_count.toLocaleString()} {post.supports_count === 1 ? 'love' : 'loves'}</p></div>
+        )}
 
-          <DislikeButton
-            postId={post.id}
-            initialCount={post.dislikes_count}
-            initialDisliked={post.user_has_disliked}
-          />
+        {/* Caption */}
+        <div className="px-4 pt-1.5 pb-1">
+          <Link href={`/post/${post.id}`}><h2 className="text-[13px] font-bold text-foreground inline hover:underline cursor-pointer">{post.title}</h2></Link>
+          <p className="text-[13px] text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{post.content}</p>
+        </div>
 
-          <Link
-            href={`/post/${post.id}`}
-            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-accent transition-all group"
-          >
-            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">Comment</span>
+        {/* Comments */}
+        {post.comments_count > 0 && (
+          <Link href={`/post/${post.id}`} className="block px-4 pb-1">
+            <span className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">View all {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}</span>
           </Link>
-
-          <RepostButton
-            postId={post.id}
-            postAuthorId={post.author_id}
-          />
-
-          <button
-            onClick={handleShare}
-            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-accent transition-all group"
-          >
-            <Share2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">Share</span>
-          </button>
-        </div>
+        )}
+        <div className="h-2" />
       </article>
-
-      {/* Report Dialog — BUG FIX: was never rendered before */}
-      {showReport && (
-        <ReportDialog postId={post.id} onClose={() => setShowReport(false)} />
-      )}
+      {showReport && <ReportDialog postId={post.id} onClose={() => setShowReport(false)} />}
     </>
   );
 }

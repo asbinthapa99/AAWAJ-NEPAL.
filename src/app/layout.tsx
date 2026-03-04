@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import ClientNavbar from "@/components/ClientNavbar";
+import BottomNav from "@/components/BottomNav";
 import CookieConsent from "@/components/CookieConsent";
 
 const geistSans = Geist({
@@ -114,7 +115,8 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <ClientNavbar />
-            <main>{children}</main>
+            <main className="pb-16 md:pb-0">{children}</main>
+            <BottomNav />
             <CookieConsent />
           </AuthProvider>
         </ThemeProvider>

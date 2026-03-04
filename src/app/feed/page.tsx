@@ -55,7 +55,7 @@ export default function FeedPage() {
 
       let query = supabase
         .from('posts')
-        .select('*, author:profiles(id, full_name, username, avatar_url)');
+        .select('*, author:profiles!posts_author_id_fkey(id, full_name, username, avatar_url)');
 
       if (category !== 'all') query = query.eq('category', category);
 

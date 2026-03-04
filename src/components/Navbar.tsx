@@ -8,8 +8,6 @@ import {
   PlusCircle,
   User,
   LogOut,
-  Menu,
-  X,
   Home,
   ChevronDown,
 } from 'lucide-react';
@@ -19,7 +17,6 @@ import { Avatar } from './ui/Avatar';
 
 export default function Navbar() {
   const { user, profile, signOut } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const [language, setLanguage] = useState<'en' | 'np'>(() => {
@@ -225,56 +222,37 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* ── Mobile ── */}
-          <div className="flex md:hidden items-center gap-1.5">
-            {user && <NotificationBadge />}
-            <ThemeToggle />
+          {/* ── Mobile: minimal top bar (bottom nav handles navigation) ── */}
+          <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-9 h-9 rounded-xl border border-border flex items-center justify-center transition-all hover:bg-accent"
-              aria-label="Toggle menu"
+              onClick={toggleLanguage}
+              className="h-8 px-2.5 rounded-lg border border-border/50 text-[11px] font-bold transition-all"
+              style={{ color: 'hsl(var(--muted-foreground))' }}
             >
-              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              {language === 'en' ? '🇳🇵' : '🇬🇧'}
             </button>
-          </div>
-        </div>
-
-        {/* ── Mobile Menu ── */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4 pt-2 space-y-1 border-t border-border animate-fade-in">
-            <Link href={user ? '/dashboard' : '/feed'} onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-sm font-semibold text-foreground transition-colors">
-              <Home className="w-5 h-5 text-primary" /> {labels.homeFeed}
-            </Link>
-            {user ? (
-              <>
-                <Link href="/post/create" onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-sm font-semibold text-foreground transition-colors">
-                  <PlusCircle className="w-5 h-5" style={{ color: 'hsl(var(--primary))' }} /> {labels.create}
-                </Link>
-                <Link href={`/profile/${user.id}`} onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent text-sm font-semibold text-foreground transition-colors">
-                  <User className="w-5 h-5 text-primary" /> {labels.myProfile}
-                </Link>
-                <button onClick={toggleLanguage}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-accent w-full text-left text-sm font-semibold text-foreground transition-colors">
-                  <span className="text-lg">{language === 'en' ? '🇳🇵' : '🇬🇧'}</span>
-                  {language === 'en' ? 'Switch to Nepali' : 'Switch to English'}
-                </button>
-                <button onClick={() => { signOut(); setMobileMenuOpen(false); }}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-destructive/10 w-full text-left text-sm font-semibold text-destructive transition-colors">
-                  <LogOut className="w-5 h-5" /> {labels.signOut}
-                </button>
-              </>
-            ) : (
-              <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 mx-3 py-3 rounded-xl text-sm font-bold transition-all"
-                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+            <ThemeToggle />
+            {user && (
+              <Link href={`/profile/${user.id}`} className="ml-0.5">
+                <Avatar
+                  src={profile?.avatar_url || undefined}
+                  fallback={profile?.full_name || 'U'}
+                  size="sm"
+                  className="ring-1.5 ring-border"
+                />
+              </Link>
+            )}
+            {!user && (
+              <Link
+                href="/auth/login"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                style={{ background: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}
+              >
                 Sign In
               </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );
