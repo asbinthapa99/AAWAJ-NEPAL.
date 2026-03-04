@@ -73,7 +73,7 @@ function PeekerIcon({ watching }: { watching: boolean }) {
 }
 
 export default function LoginPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -83,9 +83,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
+  // Only redirect if auth is fully resolved AND user is logged in
+  // (prevents flash when logging in — the login handler does its own push)
   useEffect(() => {
-    if (user) router.replace('/dashboard');
-  }, [user, router]);
+    if (!authLoading && user && !loading) {
+      router.replace('/dashboard');
+    }
+  }, [user, authLoading, loading, router]);
 
   const handleOAuth = async (provider: 'google') => {
     setLoadingOAuth(true);
@@ -125,10 +129,22 @@ export default function LoginPage() {
       else setError(error.message);
       setLoading(false);
     } else {
-      router.push('/dashboard');
-      router.refresh();
+      // Use replace so the login page is not kept in browser history
+      router.replace('/dashboard');
     }
   };
+
+  // While auth state is loading OR user is already logged in — show nothing (prevents flash)
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'hsl(var(--background))' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'hsl(var(--primary))' }} />
+          <p className="text-sm" style={{ color: 'hsl(var(--muted-foreground))' }}>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex overflow-hidden">
