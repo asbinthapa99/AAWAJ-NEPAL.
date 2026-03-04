@@ -59,7 +59,7 @@ export default function PostDetailPage({
   const fetchPost = async () => {
     const { data } = await supabase
       .from('posts')
-      .select('*, author:profiles(*)')
+      .select('*, author:profiles!author_id(*)')
       .eq('id', id)
       .single();
 
@@ -138,7 +138,7 @@ export default function PostDetailPage({
     if (navigator.share) {
       try {
         await navigator.share({ title: post.title, url });
-      } catch {}
+      } catch { }
     } else {
       await navigator.clipboard.writeText(url);
       alert('Link copied!');

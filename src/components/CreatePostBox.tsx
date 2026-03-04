@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthProvider';
 import { compressImage } from '@/lib/image';
+import { Avatar } from './ui/Avatar';
 import {
     Image as ImageIcon,
     X,
@@ -117,24 +118,21 @@ export default function CreatePostBox({ onPostCreated, onRaiseIssue }: CreatePos
     };
 
     const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
-    const initial = displayName[0]?.toUpperCase() || 'U';
 
     return (
-        <div className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] p-4 mb-4">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-4 mb-4">
             {/* Top row: avatar + input */}
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#1877F2] to-blue-400 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                    {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                        initial
-                    )}
-                </div>
+                <Avatar
+                    src={profile?.avatar_url || undefined}
+                    fallback={displayName}
+                    size="md"
+                />
                 <div
                     onClick={() => setExpanded(true)}
-                    className={`flex-1 px-4 py-2.5 bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-full cursor-text text-sm ${expanded
-                            ? 'hidden'
-                            : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#e4e6eb] dark:hover:bg-[#4e4f50] transition-colors'
+                    className={`flex-1 px-4 py-2.5 bg-muted rounded-full cursor-text text-sm ${expanded
+                        ? 'hidden'
+                        : 'text-muted-foreground hover:bg-accent transition-colors'
                         }`}
                 >
                     What&apos;s on your mind, {displayName.split(' ')[0]}?
@@ -150,12 +148,12 @@ export default function CreatePostBox({ onPostCreated, onRaiseIssue }: CreatePos
                         placeholder={`What's on your mind, ${displayName.split(' ')[0]}?`}
                         rows={3}
                         autoFocus
-                        className="w-full px-3 py-2 bg-transparent outline-none text-[15px] text-gray-900 dark:text-[#e4e6eb] placeholder-gray-400 dark:placeholder-[#b0b3b8] resize-none"
+                        className="w-full px-3 py-2 bg-transparent outline-none text-[15px] text-foreground placeholder:text-muted-foreground resize-none"
                     />
 
                     {/* Image preview */}
                     {imagePreview && (
-                        <div className="relative mt-2 rounded-lg overflow-hidden border border-gray-200 dark:border-[#393a3b]">
+                        <div className="relative mt-2 rounded-lg overflow-hidden border border-border">
                             <img src={imagePreview} alt="Preview" className="w-full max-h-[300px] object-cover" />
                             <button
                                 onClick={removeImage}
@@ -169,12 +167,12 @@ export default function CreatePostBox({ onPostCreated, onRaiseIssue }: CreatePos
             )}
 
             {/* Action bar */}
-            <div className={`flex items-center justify-between ${expanded ? 'mt-3 pt-3 border-t border-gray-200 dark:border-[#393a3b]' : 'mt-3 pt-3 border-t border-gray-200 dark:border-[#393a3b]'}`}>
+            <div className={`flex items-center justify-between mt-3 pt-3 border-t border-border`}>
                 <div className="flex items-center gap-1">
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-success hover:bg-success/10 transition-colors"
                     >
                         <ImageIcon className="w-5 h-5" />
                         <span className="hidden sm:inline">Photo</span>
@@ -190,7 +188,7 @@ export default function CreatePostBox({ onPostCreated, onRaiseIssue }: CreatePos
                     <button
                         type="button"
                         onClick={onRaiseIssue}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
                     >
                         <Megaphone className="w-5 h-5" />
                         <span className="hidden sm:inline">Raise Issue</span>
@@ -201,7 +199,7 @@ export default function CreatePostBox({ onPostCreated, onRaiseIssue }: CreatePos
                     <button
                         onClick={handleSubmit}
                         disabled={loading || (!content.trim() && !imageFile)}
-                        className="flex items-center gap-1.5 px-5 py-2 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="flex items-center gap-1.5 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <Loader2 className="w-4 h-4 animate-spin" />

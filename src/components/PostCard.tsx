@@ -5,35 +5,28 @@ import Link from 'next/link';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
+import { timeAgo } from '@/lib/utils';
 import { MessageCircle, Share2, MapPin, Flag, Trash2, MoreHorizontal, Globe, Repeat2 } from 'lucide-react';
 import SupportButton from './SupportButton';
 import DislikeButton from './DislikeButton';
 import RepostButton from './RepostButton';
+import ReportDialog from './ReportDialog';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthProvider';
+import { cn } from '@/lib/cn';
+import { Avatar } from './ui/Avatar';
+import { Badge } from './ui/Badge';
 
 interface PostCardProps {
   post: Post;
   onDeleted?: (postId: string) => void;
 }
 
-function timeAgo(date: string): string {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d`;
-  const months = Math.floor(days / 30);
-  return `${months}mo`;
-}
-
 export default function PostCard({ post, onDeleted }: PostCardProps) {
   const { user } = useAuth();
   const [deleting, setDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
@@ -89,181 +82,193 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   }, [showMenu]);
 
   return (
-    <article className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] hover:shadow-md transition-shadow duration-200 overflow-hidden">
-      {/* Repost Header */}
-      {post.repost_user && (
-        <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-sm text-gray-500 dark:text-[#b0b3b8]">
-          <Repeat2 className="w-4 h-4 text-green-500" />
-          <Link href={`/profile/${post.repost_user.id}`} className="font-semibold hover:underline">
-            {post.repost_user.full_name}
-          </Link>
-          <span>reposted</span>
-          {post.repost_caption && (
-            <span className="text-gray-700 dark:text-[#e4e6eb] italic truncate max-w-[200px]">
-              &mdash; &ldquo;{post.repost_caption}&rdquo;
-            </span>
-          )}
-        </div>
-      )}
-      {/* Header */}
-      <div className="p-4 pb-0">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2.5">
-            <Link href={`/profile/${post.author_id}`}>
-              <div className="w-10 h-10 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity">
-                {post.author?.full_name?.[0]?.toUpperCase() || 'U'}
-              </div>
+    <>
+      <article className="bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+        {/* Repost Header */}
+        {post.repost_user && (
+          <div className="px-4 pt-3 pb-0 flex items-center gap-2 text-sm text-muted-foreground">
+            <Repeat2 className="w-4 h-4 text-success" />
+            <Link href={`/profile/${post.repost_user.id}`} className="font-semibold hover:underline">
+              {post.repost_user.full_name}
             </Link>
-            <div>
-              <Link
-                href={`/profile/${post.author_id}`}
-                className="text-[15px] font-semibold text-gray-900 dark:text-[#e4e6eb] hover:underline"
-              >
-                {post.author?.full_name || 'Anonymous'}
+            <span>reposted</span>
+            {post.repost_caption && (
+              <span className="text-foreground italic truncate max-w-[200px]">
+                &mdash; &ldquo;{post.repost_caption}&rdquo;
+              </span>
+            )}
+          </div>
+        )}
+        {/* Header */}
+        <div className="p-4 pb-0">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5">
+              <Link href={`/profile/${post.author_id}`}>
+                <Avatar
+                  src={post.author?.avatar_url || undefined}
+                  fallback={post.author?.full_name || 'U'}
+                  size="md"
+                  className="hover:opacity-90 transition-opacity cursor-pointer"
+                />
               </Link>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-[#b0b3b8]">
-                <span>{timeAgo(post.created_at)}</span>
-                <span>·</span>
-                {post.district && (
-                  <>
-                    <span className="flex items-center gap-0.5">
-                      <MapPin className="w-3 h-3" />
-                      {post.district}
-                    </span>
-                    <span>·</span>
-                  </>
-                )}
-                <Globe className="w-3 h-3" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {/* Urgency Badge */}
-            <span
-              className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${urgency.bgColor} ${urgency.color}`}
-            >
-              {urgency.label}
-            </span>
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
-              >
-                <MoreHorizontal className="w-5 h-5 text-gray-500 dark:text-[#b0b3b8]" />
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-9 w-48 bg-white dark:bg-[#242526] rounded-lg shadow-lg border border-gray-200 dark:border-[#393a3b] overflow-hidden z-20">
-                  <button
-                    onClick={() => { setShowMenu(false); }}
-                    className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-[#e4e6eb] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
-                  >
-                    <Flag className="w-4 h-4" /> Report post
-                  </button>
-                  {user?.id === post.author_id && (
-                    <button
-                      onClick={() => { setShowMenu(false); handleDelete(); }}
-                      disabled={deleting}
-                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" /> Delete post
-                    </button>
+              <div>
+                <Link
+                  href={`/profile/${post.author_id}`}
+                  className="text-sm font-semibold text-foreground hover:underline"
+                >
+                  {post.author?.full_name || 'Anonymous'}
+                </Link>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>{timeAgo(post.created_at)}</span>
+                  <span>·</span>
+                  {post.district && (
+                    <>
+                      <span className="flex items-center gap-0.5">
+                        <MapPin className="w-3 h-3" />
+                        {post.district}
+                      </span>
+                      <span>·</span>
+                    </>
                   )}
+                  <Globe className="w-3 h-3" />
                 </div>
-              )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1">
+              {/* Urgency Badge */}
+              <Badge variant={urgency.label === 'Critical' || urgency.label === 'High' ? 'destructive' : urgency.label === 'Low' ? 'success' : 'warning'}>
+                {urgency.label}
+              </Badge>
+              <div ref={menuRef} className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent transition-colors focus-ring"
+                  aria-label="Post options"
+                >
+                  <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-9 w-48 bg-popover rounded-lg shadow-lg border border-border overflow-hidden z-20 animate-scale-in">
+                    <button
+                      onClick={() => { setShowMenu(false); setShowReport(true); }}
+                      className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
+                    >
+                      <Flag className="w-4 h-4" /> Report post
+                    </button>
+                    {user?.id === post.author_id && (
+                      <button
+                        onClick={() => { setShowMenu(false); handleDelete(); }}
+                        disabled={deleting}
+                        className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/5 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete post
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-4 pt-3 pb-0">
-        {/* Category Tag */}
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${category.bgColor} ${category.color} mb-2`}
-        >
-          <span>{category.icon}</span>
-          {category.label}
-        </span>
+        {/* Content */}
+        <div className="px-4 pt-3 pb-0">
+          {/* Category Tag */}
+          <span
+            className={cn(
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium mb-2',
+              category.bgColor, category.color,
+            )}
+          >
+            <span>{category.icon}</span>
+            {category.label}
+          </span>
 
-        <Link href={`/post/${post.id}`}>
-          <h2 className="text-[15px] font-bold text-gray-900 dark:text-[#e4e6eb] mb-1 hover:underline cursor-pointer">
-            {post.title}
-          </h2>
-        </Link>
+          <Link href={`/post/${post.id}`}>
+            <h2 className="text-sm font-bold text-foreground mb-1 hover:underline cursor-pointer">
+              {post.title}
+            </h2>
+          </Link>
 
-        <p className="text-gray-700 dark:text-[#b0b3b8] text-[15px] leading-relaxed line-clamp-4 mt-1">
-          {post.content}
-        </p>
-      </div>
+          <p className="text-muted-foreground text-sm leading-relaxed line-clamp-4 mt-1">
+            {post.content}
+          </p>
+        </div>
 
-      {/* Image */}
-      {post.image_url && (
-        <div className="mt-3">
-          <img
-            src={post.image_url}
-            alt={post.title}
-            className="w-full max-h-[500px] object-cover border-y border-gray-100 dark:border-[#393a3b]"
+        {/* Image */}
+        {post.image_url && (
+          <div className="mt-3">
+            <img
+              src={post.image_url}
+              alt={post.title}
+              className="w-full max-h-[500px] object-cover border-y border-border"
+            />
+          </div>
+        )}
+
+        {/* Reaction counts */}
+        <div className="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            {(post.supports_count > 0 || post.dislikes_count > 0) && (
+              <span className="flex items-center gap-1.5">
+                <div className="flex -space-x-1 border-r border-border pr-2">
+                  {post.supports_count > 0 && <span className="relative z-10 w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-primary-foreground text-[10px] ring-2 ring-card shadow-sm">👍</span>}
+                  {post.dislikes_count > 0 && <span className="relative z-0 w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-destructive-foreground text-[10px] ring-2 ring-card shadow-sm">👎</span>}
+                </div>
+                <span className="font-medium">{post.supports_count + post.dislikes_count}</span>
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 font-medium">
+            {post.comments_count > 0 && (
+              <Link href={`/post/${post.id}`} className="hover:underline">
+                {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mx-2 sm:mx-4 py-1.5 flex items-center border-t border-border">
+          <SupportButton
+            postId={post.id}
+            initialCount={post.supports_count}
           />
+
+          <DislikeButton
+            postId={post.id}
+            initialCount={post.dislikes_count}
+            initialDisliked={post.user_has_disliked}
+          />
+
+          <Link
+            href={`/post/${post.id}`}
+            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-accent transition-all group"
+          >
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline">Comment</span>
+          </Link>
+
+          <RepostButton
+            postId={post.id}
+            postAuthorId={post.author_id}
+          />
+
+          <button
+            onClick={handleShare}
+            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:bg-accent transition-all group"
+          >
+            <Share2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+            <span className="hidden sm:inline">Share</span>
+          </button>
         </div>
+      </article>
+
+      {/* Report Dialog — BUG FIX: was never rendered before */}
+      {showReport && (
+        <ReportDialog postId={post.id} onClose={() => setShowReport(false)} />
       )}
-
-      {/* Reaction counts */}
-      <div className="px-4 py-2 flex items-center justify-between text-xs text-gray-500 dark:text-[#b0b3b8]">
-        <div className="flex items-center gap-1">
-          {(post.supports_count > 0 || post.dislikes_count > 0) && (
-            <span className="flex items-center gap-1.5">
-              <div className="flex -space-x-1 border-r border-gray-200 dark:border-[#393a3b] pr-2">
-                {post.supports_count > 0 && <span className="relative z-10 w-[18px] h-[18px] bg-gradient-to-r from-[#1877F2] to-blue-400 rounded-full flex items-center justify-center text-white text-[10px] ring-2 ring-white dark:ring-[#242526] shadow-sm">👍</span>}
-                {post.dislikes_count > 0 && <span className="relative z-0 w-[18px] h-[18px] bg-gradient-to-r from-red-500 to-red-400 rounded-full flex items-center justify-center text-white text-[10px] ring-2 ring-white dark:ring-[#242526] shadow-sm">👎</span>}
-              </div>
-              <span className="font-medium">{post.supports_count + post.dislikes_count}</span>
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-3 font-medium">
-          {post.comments_count > 0 && (
-            <Link href={`/post/${post.id}`} className="hover:underline">
-              {post.comments_count} comment{post.comments_count !== 1 ? 's' : ''}
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="mx-2 sm:mx-4 py-1.5 flex items-center border-t border-gray-100 dark:border-[#393a3b]">
-        <SupportButton
-          postId={post.id}
-          initialCount={post.supports_count}
-        />
-
-        <DislikeButton
-          postId={post.id}
-          initialCount={post.dislikes_count}
-          initialDisliked={post.user_has_disliked}
-        />
-
-        <Link
-          href={`/post/${post.id}`}
-          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-all group"
-        >
-          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-          <span className="hidden sm:inline">Comment</span>
-        </Link>
-
-        <RepostButton
-          postId={post.id}
-          postAuthorId={post.author_id}
-        />
-
-        <button
-          onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-all group"
-        >
-          <Share2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
-          <span className="hidden sm:inline">Share</span>
-        </button>
-      </div>
-    </article>
+    </>
   );
 }

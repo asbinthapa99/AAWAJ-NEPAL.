@@ -100,7 +100,7 @@ export default function ProfilePage({
     // Fetch user's posts
     const { data: postsData } = await supabase
       .from('posts')
-      .select('*, author:profiles(*)')
+      .select('*, author:profiles!author_id(*)')
       .eq('author_id', id)
       .order('created_at', { ascending: false });
 

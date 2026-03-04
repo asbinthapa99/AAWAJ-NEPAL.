@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/components/AuthProvider";
-import Navbar from "@/components/Navbar";
+import ClientNavbar from "@/components/ClientNavbar";
 import CookieConsent from "@/components/CookieConsent";
 
 const geistSans = Geist({
@@ -113,7 +113,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
+            <ClientNavbar />
             <main>{children}</main>
             <CookieConsent />
           </AuthProvider>

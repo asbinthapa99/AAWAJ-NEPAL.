@@ -8,6 +8,7 @@ import CategoryFilter from '@/components/CategoryFilter';
 import { Megaphone, TrendingUp, Clock, Loader2, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
+import { Alert } from '@/components/ui/Alert';
 
 type SortMode = 'latest' | 'trending';
 
@@ -156,20 +157,20 @@ export default function FeedPage() {
   }, [category, sort, supabase]);
 
   return (
-    <div className="min-h-[100dvh] bg-[#f0f2f5] dark:bg-[#18191a]">
+    <div className="min-h-[100dvh] bg-background">
       <div className="max-w-[680px] mx-auto px-4 py-6">
         {/* Page Header */}
-        <div className="bg-white dark:bg-[#242526] rounded-xl shadow-sm border border-gray-100 dark:border-[#393a3b] p-4 mb-5 hover:shadow-md transition-shadow">
-          <h1 className="text-[20px] font-bold text-gray-900 dark:text-[#e4e6eb]">Public Feed</h1>
-          <p className="text-[13px] text-gray-500 dark:text-[#b0b3b8] mt-0.5">Voices raised by citizens across Nepal</p>
+        <div className="bg-card rounded-xl shadow-sm border border-border p-4 mb-5 hover:shadow-md transition-shadow">
+          <h1 className="text-xl font-bold text-foreground">Public Feed</h1>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Voices raised by citizens across Nepal</p>
 
           {/* Sort Tabs */}
-          <div className="flex mt-3 pt-3 border-t border-gray-100 dark:border-[#393a3b]">
+          <div className="flex mt-3 pt-3 border-t border-border">
             <button
               onClick={() => setSort('latest')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${sort === 'latest'
-                ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951] shadow-sm'
-                : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                ? 'text-primary bg-primary/10 shadow-sm'
+                : 'text-muted-foreground hover:bg-accent'
                 }`}
             >
               <Clock className={`w-5 h-5 ${sort === 'latest' ? 'animate-pulse' : ''}`} />
@@ -178,8 +179,8 @@ export default function FeedPage() {
             <button
               onClick={() => setSort('trending')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${sort === 'trending'
-                ? 'text-[#1877F2] bg-[#e7f3ff] dark:bg-[#263951] shadow-sm'
-                : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                ? 'text-primary bg-primary/10 shadow-sm'
+                : 'text-muted-foreground hover:bg-accent'
                 }`}
             >
               <TrendingUp className={`w-5 h-5 ${sort === 'trending' ? 'animate-pulse' : ''}`} />
@@ -195,26 +196,26 @@ export default function FeedPage() {
 
         {/* Posts */}
         {fetchError && (
-          <div className="mb-4 px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-xl text-sm">
-            ⚠️ {fetchError}
+          <div className="mb-4">
+            <Alert variant="error">⚠️ {fetchError}</Alert>
           </div>
         )}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-[#1877F2] mb-3" />
-            <p className="text-sm text-gray-500 dark:text-[#b0b3b8]">Loading...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-primary mb-3" />
+            <p className="text-sm text-muted-foreground">Loading...</p>
           </div>
         ) : posts.length === 0 ? (
-          <div className="text-center py-16 bg-white dark:bg-[#242526] rounded-lg shadow-sm">
-            <Megaphone className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 dark:text-[#e4e6eb] mb-2">No posts yet</h3>
-            <p className="text-sm text-gray-500 dark:text-[#b0b3b8] max-w-sm mx-auto mb-4">
+          <div className="text-center py-16 bg-card rounded-xl shadow-sm border border-border">
+            <Megaphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-foreground mb-2">No posts yet</h3>
+            <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-4">
               Be the first to raise your voice about an issue affecting Nepal.
             </p>
             {user && (
               <Link
                 href="/post/create"
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
                 <PlusCircle className="w-4 h-4" />
                 Create Post
@@ -231,7 +232,7 @@ export default function FeedPage() {
               <button
                 onClick={() => fetchPosts(true)}
                 disabled={loadingMore}
-                className="w-full py-3.5 rounded-xl bg-white dark:bg-[#242526] shadow-sm border border-gray-100 dark:border-[#393a3b] text-[#1877F2] font-semibold text-sm hover:bg-gray-50 dark:hover:bg-[#3a3b3c] transition-colors disabled:opacity-50"
+                className="w-full py-3.5 rounded-xl bg-card shadow-sm border border-border text-primary font-semibold text-sm hover:bg-accent transition-colors disabled:opacity-50"
               >
                 {loadingMore ? (
                   <span className="flex items-center justify-center gap-2">

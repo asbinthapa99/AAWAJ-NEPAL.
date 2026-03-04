@@ -62,9 +62,9 @@ export async function GET(request: Request) {
     // Fetch crypto prices from CoinGecko (free, no auth needed)
     const cryptoRes = await fetch(
       'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true',
-      { 
+      {
         cache: 'no-store',
-        headers: { 'User-Agent': 'Awaaz-Nepal/1.0' }
+        headers: { 'User-Agent': 'GuffGaff/1.0' }
       }
     );
 

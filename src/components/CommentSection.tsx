@@ -34,7 +34,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const fetchComments = async () => {
     const { data } = await supabase
       .from('comments')
-      .select('*, author:profiles(*)')
+      .select('*, author:profiles!author_id(*)')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 

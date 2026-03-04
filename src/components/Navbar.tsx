@@ -7,16 +7,14 @@ import {
   Megaphone,
   PlusCircle,
   User,
-  LogIn,
   LogOut,
   Menu,
   X,
   Home,
-  Search,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import NotificationBadge from './NotificationBadge';
-import { createClient } from '@/lib/supabase/client';
+import { Avatar } from './ui/Avatar';
 
 interface SearchResult {
   id: string;
@@ -29,35 +27,13 @@ export default function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  const handleSearch = useCallback((query: string) => {
-    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    if (query.trim().length < 2) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
-    searchTimerRef.current = setTimeout(async () => {
-      const supabase = createClient();
-      const searchTerm = `%${query.trim()}%`;
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, avatar_url')
-        .or(`username.ilike.${searchTerm},full_name.ilike.${searchTerm}`)
-        .limit(8);
-      setSearchResults(data || []);
-      setShowSearchResults(true);
-    }, 300);
-  }, []);
   const [language, setLanguage] = useState<'en' | 'np'>(() => {
     if (typeof window === 'undefined') return 'en';
     const stored = window.localStorage.getItem('awaaz-lang');
     return stored === 'np' ? 'np' : 'en';
   });
+
   const labels = language === 'np'
     ? {
       feed: 'फिड',
@@ -115,76 +91,35 @@ export default function Navbar() {
   }, [profileMenuOpen]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white dark:bg-[#242526] shadow-sm dark:shadow-none border-b border-gray-200 dark:border-[#393a3b]">
+    <nav className="sticky top-0 z-50 bg-card border-b border-border shadow-sm">
       <div className="max-w-[1920px] mx-auto px-4">
         <div className="flex items-center justify-between h-14">
-          {/* Left: Logo + Search */}
+          {/* Left: Logo */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-1.5">
-              <div className="w-10 h-10 bg-[#1877F2] rounded-full flex items-center justify-center shadow-sm">
-                <Megaphone className="w-5 h-5 text-white" />
+            <Link href={user ? '/dashboard' : '/'} className="flex items-center gap-1.5 focus-ring rounded-full">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                <Megaphone className="w-5 h-5 text-primary-foreground" />
               </div>
             </Link>
-            <div className="hidden md:flex">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    handleSearch(e.target.value);
-                  }}
-                  onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
-                  onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-                  placeholder={labels.searchPlaceholder}
-                  className="w-60 pl-10 pr-4 py-2 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] border-none rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500 dark:placeholder-[#b0b3b8] focus:ring-2 focus:ring-[#1877F2]/30 transition-all"
-                />
-                {showSearchResults && searchResults.length > 0 && (
-                  <div className="absolute top-full mt-2 left-0 right-0 bg-white dark:bg-[#242526] rounded-xl shadow-xl border border-gray-200 dark:border-[#393a3b] overflow-hidden z-50">
-                    {searchResults.map((result) => (
-                      <Link
-                        key={result.id}
-                        href={`/profile/${result.id}`}
-                        className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
-                        onClick={() => { setShowSearchResults(false); setSearchQuery(''); }}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1877F2] to-blue-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                          {result.avatar_url ? (
-                            <img src={result.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            result.full_name?.[0]?.toUpperCase() || 'U'
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-[#e4e6eb] truncate">{result.full_name}</p>
-                          <p className="text-xs text-gray-500 dark:text-[#b0b3b8]">@{result.username}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
           {/* Center: Nav Icons */}
           <div className="hidden md:flex items-center gap-2">
             <Link
               href={user ? '/dashboard' : '/feed'}
-              className="relative px-8 py-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+              className="relative px-8 py-2 rounded-lg hover:bg-accent transition-colors focus-ring"
               title={labels.titleHome}
             >
-              <Home className="w-6 h-6 text-[#1877F2] mx-auto" />
-              <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-[#1877F2] rounded-t-full" />
+              <Home className="w-6 h-6 text-primary mx-auto" />
+              <div className="absolute bottom-0 left-2 right-2 h-[3px] bg-primary rounded-t-full" />
             </Link>
             {user && (
               <Link
                 href="/post/create"
-                className="relative px-8 py-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors group"
+                className="relative px-8 py-2 rounded-lg hover:bg-accent transition-colors group focus-ring"
                 title={labels.create}
               >
-                <PlusCircle className="w-6 h-6 text-gray-500 dark:text-[#b0b3b8] group-hover:text-[#1877F2] mx-auto transition-colors" />
+                <PlusCircle className="w-6 h-6 text-muted-foreground group-hover:text-primary mx-auto transition-colors" />
               </Link>
             )}
           </div>
@@ -194,7 +129,7 @@ export default function Navbar() {
             {user && <NotificationBadge />}
             <button
               onClick={toggleLanguage}
-              className="w-10 h-10 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center hover:bg-[#d8dadf] dark:hover:bg-[#4e4f50] transition-colors text-xs font-bold text-gray-800 dark:text-[#e4e6eb]"
+              className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors text-xs font-bold text-foreground focus-ring"
             >
               {language === 'en' ? 'EN' : 'ने'}
             </button>
@@ -203,90 +138,86 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setProfileMenuOpen(!profileMenuOpen); }}
-                  className="flex items-center gap-1 ml-1"
+                  className="flex items-center gap-1 ml-1 focus-ring rounded-full"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-transparent hover:ring-[#1877F2]/30 transition-all">
-                    {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-                  </div>
+                  <Avatar
+                    src={profile?.avatar_url || undefined}
+                    fallback={profile?.full_name || 'U'}
+                    size="md"
+                    className="ring-2 ring-transparent hover:ring-primary/30 transition-all"
+                  />
                 </button>
                 {profileMenuOpen && (
-                  <div className="absolute right-0 top-12 w-72 bg-white dark:bg-[#242526] rounded-lg shadow-2xl border border-gray-200 dark:border-[#393a3b] overflow-hidden z-50">
+                  <div className="absolute right-0 top-12 w-72 bg-card rounded-xl shadow-xl border border-border overflow-hidden z-50 animate-scale-in">
                     <div className="p-3">
                       <Link
                         href={`/profile/${user.id}`}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors"
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent transition-colors"
                         onClick={() => setProfileMenuOpen(false)}
                       >
-                        <div className="w-9 h-9 bg-gradient-to-br from-[#1877F2] to-[#42b72a] rounded-full flex items-center justify-center text-white text-sm font-bold">
-                          {profile?.full_name?.[0]?.toUpperCase() || 'U'}
-                        </div>
+                        <Avatar
+                          src={profile?.avatar_url || undefined}
+                          fallback={profile?.full_name || 'U'}
+                          size="sm"
+                        />
                         <div>
-                          <p className="text-[15px] font-semibold text-gray-900 dark:text-[#e4e6eb]">{profile?.full_name || 'User'}</p>
-                          <p className="text-xs text-gray-500 dark:text-[#b0b3b8]">{labels.myProfile}</p>
+                          <p className="text-sm font-semibold text-foreground">{profile?.full_name || 'User'}</p>
+                          <p className="text-xs text-muted-foreground">{labels.myProfile}</p>
                         </div>
                       </Link>
                     </div>
-                    <div className="border-t border-gray-200 dark:border-[#393a3b]" />
+                    <div className="border-t border-border" />
                     <div className="p-2">
                       <button
                         onClick={() => { signOut(); setProfileMenuOpen(false); }}
-                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] transition-colors text-left"
+                        className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg hover:bg-accent transition-colors text-left"
                       >
-                        <div className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center">
-                          <LogOut className="w-4 h-4 text-gray-800 dark:text-[#e4e6eb]" />
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center">
+                          <LogOut className="w-4 h-4 text-foreground" />
                         </div>
-                        <span className="text-[15px] font-medium text-gray-900 dark:text-[#e4e6eb]">{labels.signOut}</span>
+                        <span className="text-sm font-medium text-foreground">{labels.signOut}</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
-            ) : (
-              <Link href="/auth/login" className="flex items-center gap-2 px-5 py-2 bg-[#1877F2] text-white rounded-lg text-sm font-semibold hover:bg-[#166FE5] transition-colors">
-                <LogIn className="w-4 h-4" />
-                <span>{labels.signIn}</span>
-              </Link>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile */}
           <div className="flex md:hidden items-center gap-1">
-            <button onClick={toggleLanguage} className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center text-xs font-bold text-gray-800 dark:text-[#e4e6eb]">
+            <button onClick={toggleLanguage} className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground focus-ring">
               {language === 'en' ? 'EN' : 'ने'}
             </button>
             <ThemeToggle />
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-9 h-9 rounded-full bg-[#e4e6eb] dark:bg-[#3a3b3c] flex items-center justify-center">
-              {mobileMenuOpen ? <X className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" /> : <Menu className="w-5 h-5 text-gray-800 dark:text-[#e4e6eb]" />}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-9 h-9 rounded-full bg-muted flex items-center justify-center focus-ring"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5 text-foreground" /> : <Menu className="w-5 h-5 text-foreground" />}
             </button>
           </div>
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden pb-3 pt-2 space-y-1 border-t border-gray-200 dark:border-[#393a3b]">
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input type="text" placeholder={labels.searchPlaceholder} className="w-full pl-10 pr-4 py-2.5 text-sm bg-[#f0f2f5] dark:bg-[#3a3b3c] rounded-full outline-none text-gray-900 dark:text-[#e4e6eb] placeholder-gray-500" />
-            </div>
-            <Link href={user ? '/dashboard' : '/feed'} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
-              <Home className="w-5 h-5 text-[#1877F2]" /><span className="text-[15px] font-medium">{labels.homeFeed}</span>
+          <div className="md:hidden pb-3 pt-2 space-y-1 border-t border-border animate-fade-in">
+            <Link href={user ? '/dashboard' : '/feed'} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent text-foreground transition-colors">
+              <Home className="w-5 h-5 text-primary" /><span className="text-sm font-medium">{labels.homeFeed}</span>
             </Link>
             {user ? (
               <>
-                <Link href="/post/create" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
-                  <PlusCircle className="w-5 h-5 text-[#42b72a]" /><span className="text-[15px] font-medium">{labels.create}</span>
+                <Link href="/post/create" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent text-foreground transition-colors">
+                  <PlusCircle className="w-5 h-5 text-success" /><span className="text-sm font-medium">{labels.create}</span>
                 </Link>
-                <Link href={`/profile/${user.id}`} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] text-gray-900 dark:text-[#e4e6eb]">
-                  <User className="w-5 h-5 text-[#1877F2]" /><span className="text-[15px] font-medium">{labels.myProfile}</span>
+                <Link href={`/profile/${user.id}`} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent text-foreground transition-colors">
+                  <User className="w-5 h-5 text-primary" /><span className="text-sm font-medium">{labels.myProfile}</span>
                 </Link>
-                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c] w-full text-left text-gray-900 dark:text-[#e4e6eb]">
-                  <LogOut className="w-5 h-5 text-red-500" /><span className="text-[15px] font-medium">{labels.signOut}</span>
+                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent w-full text-left text-foreground transition-colors">
+                  <LogOut className="w-5 h-5 text-destructive" /><span className="text-sm font-medium">{labels.signOut}</span>
                 </button>
               </>
-            ) : (
-              <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#1877F2] text-white mx-1">
-                <LogIn className="w-5 h-5" /><span className="text-[15px] font-semibold">{labels.signIn}</span>
-              </Link>
-            )}
+            ) : null}
           </div>
         )}
       </div>
