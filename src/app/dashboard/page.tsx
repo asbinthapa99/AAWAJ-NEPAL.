@@ -294,12 +294,34 @@ export default function DashboardPage() {
 
         {/* Main Feed Column */}
         <div className="flex-1 max-w-[680px] mx-auto py-0 md:py-6 px-0 md:px-4">
-          {/* Create Post Box — hidden on mobile, use + button in bottom nav */}
+          {/* Create Post Box — full on desktop, compact strip on mobile */}
           <div className="hidden md:block">
             <CreatePostBox
               onPostCreated={() => fetchPosts()}
               onRaiseIssue={() => setShowIssueModal(true)}
             />
+          </div>
+
+          {/* Mobile Create Post Strip */}
+          <div className="flex md:hidden items-center gap-3 px-3 py-2.5 border-b border-border/50">
+            <Avatar
+              src={profile?.avatar_url || undefined}
+              fallback={profile?.full_name || 'U'}
+              size="sm"
+            />
+            <Link
+              href="/post/create"
+              className="flex-1 px-4 py-2 bg-muted rounded-full text-sm text-muted-foreground hover:bg-accent transition-colors"
+            >
+              What&apos;s on your mind?
+            </Link>
+            <Link
+              href="/post/create"
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-full text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              Post
+            </Link>
           </div>
 
           {/* Feed Section Tabs — compact on mobile */}
