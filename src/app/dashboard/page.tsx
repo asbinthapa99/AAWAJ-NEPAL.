@@ -21,7 +21,6 @@ import {
   Newspaper,
   Users,
   Flame,
-  Coins,
 } from 'lucide-react';
 
 type FeedSection = 'for-you' | 'trending' | 'latest';
@@ -40,10 +39,6 @@ export default function DashboardPage() {
   const [fetchError, setFetchError] = useState('');
   const [news, setNews] = useState<News[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [goldItems, setGoldItems] = useState<{ id: number; label: string; value: string }[]>([]);
-  const [goldUpdatedAt, setGoldUpdatedAt] = useState<string>('');
-  const [goldLoading, setGoldLoading] = useState(true);
-  const [goldError, setGoldError] = useState('');
   const [showIssueModal, setShowIssueModal] = useState(false);
 
   const insertBufferRef = useRef<Post[]>([]);
@@ -148,39 +143,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user) fetchNews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    let active = true;
-
-    const fetchGoldPrice = async () => {
-      setGoldLoading(true);
-      setGoldError('');
-      try {
-        const response = await fetch('/api/gold-price');
-        if (!response.ok) throw new Error('Request failed');
-        const data = await response.json();
-        if (!active) return;
-        setGoldItems(Array.isArray(data?.items) ? data.items : []);
-        setGoldUpdatedAt(data?.updated_at ?? '');
-      } catch (error) {
-        if (!active) return;
-        setGoldError('Unable to fetch gold prices right now.');
-        setGoldItems([]);
-      } finally {
-        if (!active) return;
-        setGoldLoading(false);
-      }
-    };
-
-    fetchGoldPrice();
-    const interval = setInterval(fetchGoldPrice, 5 * 60 * 1000);
-
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
   }, [user]);
 
   useEffect(() => {
@@ -328,36 +290,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
-          <div className="mt-6 pt-4 border-t border-border">
-            <div className="flex items-center gap-2 px-3 mb-2">
-              <Coins className="w-4 h-4 text-primary" />
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Gold Prices</p>
-            </div>
-            <div className="mx-3 rounded-lg bg-card border border-border p-3 text-xs">
-              {goldUpdatedAt && (
-                <p className="text-[11px] text-muted-foreground mb-2">Updated: {goldUpdatedAt}</p>
-              )}
-              {goldLoading ? (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...
-                </div>
-              ) : goldError ? (
-                <p className="text-destructive">{goldError}</p>
-              ) : goldItems.length === 0 ? (
-                <p className="text-muted-foreground">No data.</p>
-              ) : (
-                <div className="space-y-2">
-                  {goldItems.slice(0, 4).map((item) => (
-                    <div key={item.id} className="flex items-center justify-between">
-                      <span className="text-muted-foreground">{item.label}</span>
-                      <span className="font-semibold text-foreground">{item.value || '--'}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Main Feed Column */}
@@ -369,17 +301,23 @@ export default function DashboardPage() {
           />
 
           {/* Feed Section Tabs */}
-          <div className="bg-card rounded-xl shadow-sm border border-border mb-5 p-1 flex">
+          <div className="mb-5 p-1 flex rounded-2xl border border-border/50"
+            style={{ background: 'hsl(var(--muted)/0.4)' }}>
             {sections.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all ${activeSection === s.id
-                  ? 'text-primary bg-primary/10 shadow-sm'
-                  : 'text-muted-foreground hover:bg-accent'
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeSection === s.id
+                  ? 'shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
                   }`}
+                style={activeSection === s.id ? {
+                  background: 'hsl(var(--background))',
+                  color: 'hsl(var(--primary))',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                } : {}}
               >
-                <s.icon className={`w-5 h-5 ${activeSection === s.id ? 'animate-pulse' : ''}`} />
+                <s.icon className="w-4 h-4" />
                 {s.label}
               </button>
             ))}
