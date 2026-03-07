@@ -348,13 +348,14 @@ export async function takeAction(params: {
 
       case 'warn_user':
         // Increment warning count
-        await supabase.rpc('increment_warning_count', { p_user_id: params.targetId }).catch(() => {
+        const { error: rpcError } = await supabase.rpc('increment_warning_count', { p_user_id: params.targetId });
+        if (rpcError) {
           // Fallback: direct update
-          supabase
+          await supabase
             .from('profiles')
-            .update({ warning_count: supabase.rpc ? undefined : 1 })
+            .update({ warning_count: 1 })
             .eq('id', params.targetId);
-        });
+        }
         break;
 
       case 'suspend_user': {

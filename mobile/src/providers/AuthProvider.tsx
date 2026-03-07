@@ -4,6 +4,7 @@ import { Profile } from '../lib/types';
 import type { User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
+import { useRouter } from 'expo-router';
 import * as QueryParams from 'expo-auth-session/build/QueryParams';
 import * as Linking from 'expo-linking';
 
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const fetchProfile = useCallback(async (currentUser: User) => {
     for (let i = 0; i < 5; i++) {
@@ -137,9 +139,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sendOtp = async (email: string) => {
+    // Generate the platform-specific redirect URL just like Google OAuth
+    const appRedirectUrl = makeRedirectUri({
+      scheme: 'guffgaff',
+      path: 'auth/callback',
+    });
+
+    // Instead of giving Supabase the raw app deep link, give it the Web Interceptor
+    // so it flawlessly jumps through Vercel into the App.
+    const webFallbackRedirect = `https://aawaj-nepal.vercel.app/auth/redirect?redirect_to=${encodeURIComponent(appRedirectUrl)}`;
+
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: webFallbackRedirect,  // Force the email link to point directly back to the app!
+      },
     });
     return { error: error?.message || null };
   };
@@ -155,15 +170,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Use the app's custom scheme — guffgaff://** is already in Supabase's allowed redirect URLs
-      // ASWebAuthenticationSession intercepts this redirect even in Expo Go
-      const redirectTo = 'guffgaff://google-auth';
-      console.log('[Google OAuth] redirectTo:', redirectTo);
+      // For Android Expo Go, sometimes makeRedirectUri with custom scheme fails to deep link back.
+      // Use the standard makeRedirectUri but enforce the scheme if it's falling back.
+      const appRedirectUrl = makeRedirectUri({
+        scheme: 'guffgaff',
+        path: 'auth/callback',
+      });
+
+      console.log('[Google OAuth] App Callback URL:', appRedirectUrl);
+
+      // Force the web app to handle the Supabase callback, which then passes it back to this app appRedirectUrl 
+      const webFallbackRedirect = `https://aawaj-nepal.vercel.app/auth/redirect?redirect_to=${encodeURIComponent(appRedirectUrl)}`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo,
+          redirectTo: webFallbackRedirect,
           skipBrowserRedirect: true,
           queryParams: { prompt: 'consent' },
         },
@@ -173,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const result = await WebBrowser.openAuthSessionAsync(
         data.url,
-        redirectTo,
+        appRedirectUrl,
         { showInRecents: true }
       );
 
@@ -189,6 +211,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             access_token,
             refresh_token,
           });
+          if (!sessionError) {
+            // Explicitly redirect to the feed
+            router.replace('/(tabs)/home');
+          }
           return { error: sessionError?.message || null };
         }
         return { error: 'No tokens received from Google' };

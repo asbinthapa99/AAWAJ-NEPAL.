@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// @ts-ignore
 import { getGoldPrices } from 'hamro-patro-scraper';
 
 type RateEntry = {

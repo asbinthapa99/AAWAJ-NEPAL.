@@ -204,7 +204,7 @@ export async function uploadMedia(params: {
 
     // Upload to Supabase Storage
     const fileData = await FileSystem.readAsStringAsync(uploadUri, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: 'base64' as any,
     });
 
     const { data: uploadData, error: uploadErr } = await supabase.storage
@@ -231,7 +231,7 @@ export async function uploadMedia(params: {
         const thumbPath = storagePath.replace(/(\.[^.]+)$/, '_thumb$1');
 
         const thumbData = await FileSystem.readAsStringAsync(thumb.uri, {
-          encoding: FileSystem.EncodingType.Base64,
+          encoding: 'base64' as any,
         });
 
         await supabase.storage.from(bucket).upload(thumbPath, decode(thumbData), {
