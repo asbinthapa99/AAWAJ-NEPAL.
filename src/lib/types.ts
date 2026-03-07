@@ -5,6 +5,9 @@ export interface Profile {
   full_name: string;
   avatar_url: string | null;
   bio: string | null;
+  bio_subtitle: string | null;
+  website: string | null;
+  cover_image_url: string | null;
   district: string | null;
   role: 'user' | 'admin';
   banned_at: string | null;
@@ -36,6 +39,7 @@ export interface Post {
   urgency: UrgencyLevel;
   voice_url: string | null;
   image_url: string | null;
+  video_url: string | null;
   supports_count: number;
   dislikes_count: number;
   comments_count: number;

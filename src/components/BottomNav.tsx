@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from './AuthProvider';
-import { Home, PlusSquare, Heart, User, Search } from 'lucide-react';
+import { Home, PlusSquare, Heart, User, Search, PlayCircle } from 'lucide-react';
 import { Avatar } from './ui/Avatar';
 
 export default function BottomNav() {
@@ -22,6 +22,7 @@ export default function BottomNav() {
   const navItems = [
     { href: '/dashboard', icon: Home, label: 'Home' },
     { href: '/feed', icon: Search, label: 'Explore' },
+    { href: '/reels', icon: PlayCircle, label: 'Reels' },
     { href: '/post/create', icon: PlusSquare, label: 'Create' },
     { href: '/notifications', icon: Heart, label: 'Activity' },
     { href: `/profile/${user.id}`, icon: User, label: 'Profile', isProfile: true },

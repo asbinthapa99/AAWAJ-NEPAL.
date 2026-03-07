@@ -12,12 +12,14 @@ interface FloatingHeart {
 
 interface SupportButtonProps {
   postId: string;
+  postAuthorId?: string;
   initialCount: number;
   initialSupported?: boolean;
 }
 
 export default function SupportButton({
   postId,
+  postAuthorId,
   initialCount,
   initialSupported = false,
 }: SupportButtonProps) {
@@ -68,6 +70,20 @@ export default function SupportButton({
         if (error) { setLoading(false); return; }
         setCount((prev) => prev + 1);
         setSupported(true);
+
+        // Notify post author (fire-and-forget)
+        if (postAuthorId && postAuthorId !== user.id) {
+          supabase
+            .from('notifications')
+            .insert({
+              to_user_id: postAuthorId,
+              from_user_id: user.id,
+              type: 'support',
+              entity_id: postId,
+            })
+            .then(() => { });
+        }
+
         // Spawn 3 floating hearts with staggered timing
         spawnFloatingHeart();
         setTimeout(() => spawnFloatingHeart(), 120);
@@ -81,7 +97,7 @@ export default function SupportButton({
   };
 
   return (
-    <div className="flex-1 relative flex items-center justify-center">
+    <div className="relative flex items-center justify-center">
       {/* Floating hearts */}
       {floatingHearts.map((heart) => (
         <div
@@ -103,7 +119,7 @@ export default function SupportButton({
       <button
         onClick={toggleSupport}
         disabled={loading}
-        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 w-full
+        className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200
           ${supported
             ? 'text-rose-500'
             : 'text-muted-foreground hover:bg-accent hover:text-rose-400'

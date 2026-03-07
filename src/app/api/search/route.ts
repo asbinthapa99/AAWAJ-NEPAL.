@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
     const q = request.nextUrl.searchParams.get('q')?.trim();
@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ users: [] });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
     const searchTerm = `%${q}%`;
 
     const { data, error } = await supabase

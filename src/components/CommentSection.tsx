@@ -9,6 +9,7 @@ import { Send, Loader2, Trash2 } from 'lucide-react';
 
 interface CommentSectionProps {
   postId: string;
+  postAuthorId?: string;
 }
 
 function timeAgo(date: string): string {
@@ -22,7 +23,7 @@ function timeAgo(date: string): string {
   return `${days}d`;
 }
 
-export default function CommentSection({ postId }: CommentSectionProps) {
+export default function CommentSection({ postId, postAuthorId }: CommentSectionProps) {
   const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>([]);
   const [content, setContent] = useState('');
@@ -36,6 +37,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       .from('comments')
       .select('*, author:profiles!author_id(*)')
       .eq('post_id', postId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
     setComments(data || []);
@@ -61,6 +63,20 @@ export default function CommentSection({ postId }: CommentSectionProps) {
 
     if (!error) {
       setContent('');
+
+      // Notify post author (fire-and-forget)
+      if (postAuthorId && postAuthorId !== user.id) {
+        supabase
+          .from('notifications')
+          .insert({
+            to_user_id: postAuthorId,
+            from_user_id: user.id,
+            type: 'comment',
+            entity_id: postId,
+          })
+          .then(() => { });
+      }
+
       await fetchComments();
     }
 
@@ -68,7 +84,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   };
 
   const handleDelete = async (commentId: string) => {
-    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+    const { error } = await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId);
     if (!error) {
       setComments(comments.filter((c) => c.id !== commentId));
     }

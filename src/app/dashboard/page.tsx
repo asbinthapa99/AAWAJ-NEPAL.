@@ -80,7 +80,9 @@ export default function DashboardPage() {
 
       let query = supabase
         .from('posts')
-        .select('*, author:profiles!posts_author_id_fkey(id, full_name, username, avatar_url)');
+        .select('*, author:profiles!posts_author_id_fkey(id, full_name, username, avatar_url)')
+        .is('deleted_at', null)
+        .is('video_url', null); // Reels (video posts) live on /reels — exclude from feed
 
       if (category !== 'all') query = query.eq('category', category);
 

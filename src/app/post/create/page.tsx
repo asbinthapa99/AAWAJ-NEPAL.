@@ -11,6 +11,7 @@ import { URGENCY_CONFIG } from '@/lib/constants';
 import { compressImage } from '@/lib/image';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
+import PostingToast, { PostingStatus } from '@/components/PostingToast';
 import {
   Megaphone,
   Loader2,
@@ -18,6 +19,7 @@ import {
   MapPin,
   Tag,
   Image as ImageIcon,
+  Video,
   X,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -33,8 +35,12 @@ export default function CreatePostPage() {
   const [district, setDistrict] = useState(profile?.district || '');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [postingStatus, setPostingStatus] = useState<PostingStatus>('idle');
+  const [postingError, setPostingError] = useState('');
 
   if (!user) {
     return (
@@ -95,6 +101,39 @@ export default function CreatePostPage() {
     setImagePreview(null);
   };
 
+  const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
+  const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/mov', 'video/quicktime'];
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      setError('Only MP4, WebM, or MOV videos are allowed.');
+      return;
+    }
+    if (file.size > MAX_VIDEO_SIZE) {
+      setError('Video must be under 100MB.');
+      return;
+    }
+
+    setError('');
+    // Remove image if video is picked (mutually exclusive)
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview(null);
+
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const removeVideo = () => {
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(null);
+    setVideoPreview(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
@@ -104,6 +143,8 @@ export default function CreatePostPage() {
 
     setLoading(true);
     setError('');
+    setPostingError('');
+    setPostingStatus('posting');
 
     const supabase = createClient();
 
@@ -118,12 +159,15 @@ export default function CreatePostPage() {
 
     if (profileError) {
       console.error('Profile upsert failed:', profileError);
+      setPostingStatus('error');
+      setPostingError('Failed to verify profile: ' + profileError.message);
       setError('Failed to verify profile: ' + profileError.message);
       setLoading(false);
       return;
     }
 
     let image_url: string | null = null;
+    let video_url: string | null = null;
 
     if (imageFile) {
       const fileName = `post_${user.id}_${Date.now()}.jpg`;
@@ -135,6 +179,8 @@ export default function CreatePostPage() {
         });
 
       if (uploadError) {
+        setPostingStatus('error');
+        setPostingError('Image upload failed: ' + uploadError.message);
         setError('Image upload failed: ' + uploadError.message);
         setLoading(false);
         return;
@@ -148,6 +194,32 @@ export default function CreatePostPage() {
       }
     }
 
+    if (videoFile) {
+      const ext = videoFile.name.split('.').pop() || 'mp4';
+      const fileName = `video_${user.id}_${Date.now()}.${ext}`;
+      const { data, error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(fileName, videoFile, {
+          contentType: videoFile.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        setPostingStatus('error');
+        setPostingError('Video upload failed: ' + uploadError.message);
+        setError('Video upload failed: ' + uploadError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
+        const { data: urlData } = supabase.storage
+          .from('post-images')
+          .getPublicUrl(data.path);
+        video_url = urlData.publicUrl;
+      }
+    }
+
     // Create post
     const postPayload = {
       author_id: user.id,
@@ -157,6 +229,7 @@ export default function CreatePostPage() {
       urgency,
       district: district || null,
       image_url,
+      video_url,
     };
 
     const { error: postError, data: post } = await supabase
@@ -167,10 +240,15 @@ export default function CreatePostPage() {
 
     if (postError) {
       console.error('Post creation failed:', postError);
-      setError(postError.message + (postError.details ? ' — ' + postError.details : '') + (postError.hint ? ' (Hint: ' + postError.hint + ')' : ''));
+      const msg = postError.message + (postError.details ? ' — ' + postError.details : '') + (postError.hint ? ' (Hint: ' + postError.hint + ')' : '');
+      setPostingStatus('error');
+      setPostingError(msg);
+      setError(msg);
       setLoading(false);
     } else {
-      router.push(`/post/${post.id}`);
+      setPostingStatus('success');
+      setLoading(false);
+      // Navigation happens after toast auto-dismisses (onDismiss callback)
     }
   };
 
@@ -178,7 +256,12 @@ export default function CreatePostPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      {/* Posting / Posted toast */}
+      <PostingToast
+        status={postingStatus}
+        errorMessage={postingError}
+        onDismiss={() => router.push(`/dashboard`)}
+      />      <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-foreground">
             🗣️ Raise Your Voice
@@ -216,7 +299,8 @@ export default function CreatePostPage() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">
                 <Tag className="w-3.5 h-3.5 inline mr-1" />
-                Category *
+                Topic
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">(optional)</span>
               </label>
               <select
                 value={category}
@@ -310,16 +394,57 @@ export default function CreatePostPage() {
                 </button>
               </div>
             ) : (
-              <label className="flex items-center justify-center gap-2 px-4 py-8 bg-muted rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary transition-colors">
+              <label className={`flex items-center justify-center gap-2 px-4 py-8 bg-muted rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary transition-colors ${videoFile ? 'opacity-40 pointer-events-none' : ''}`}>
                 <ImageIcon className="w-5 h-5 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  Click to upload an image
+                  {videoFile ? 'Remove video to attach an image' : 'Click to upload an image'}
                 </span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
+                  disabled={!!videoFile}
+                />
+              </label>
+            )}
+          </div>
+
+          {/* Video Upload */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              🎬 Attach Video for Reels (Optional)
+            </label>
+            {videoPreview ? (
+              <div className="relative rounded-xl overflow-hidden bg-black">
+                <video
+                  src={videoPreview}
+                  controls
+                  className="w-full max-h-64 object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={removeVideo}
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <span className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 bg-purple-600/80 rounded-lg text-white text-xs font-semibold">
+                  <Video className="w-3 h-3" /> Reel
+                </span>
+              </div>
+            ) : (
+              <label className={`flex items-center justify-center gap-2 px-4 py-8 bg-muted rounded-xl border-2 border-dashed border-purple-400/50 cursor-pointer hover:border-purple-500 transition-colors ${imageFile ? 'opacity-40 pointer-events-none' : ''}`}>
+                <Video className="w-5 h-5 text-purple-500" />
+                <span className="text-sm text-muted-foreground">
+                  {imageFile ? 'Remove image to attach a video' : 'Click to upload a video (MP4, WebM, MOV · max 100MB)'}
+                </span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/webm,video/mov,video/quicktime"
+                  onChange={handleVideoChange}
+                  className="hidden"
+                  disabled={!!imageFile}
                 />
               </label>
             )}
@@ -328,13 +453,13 @@ export default function CreatePostPage() {
           {/* Submit */}
           <Button
             type="submit"
-            disabled={loading || !title.trim() || !content.trim()}
+            disabled={loading || postingStatus === 'success' || !title.trim() || !content.trim()}
             loading={loading}
             size="lg"
             className="w-full"
           >
             <Megaphone className="w-5 h-5" />
-            Publish Voice
+            {postingStatus === 'posting' ? 'Publishing…' : postingStatus === 'success' ? '✅ Published!' : 'Publish Voice'}
           </Button>
         </form>
       </div>

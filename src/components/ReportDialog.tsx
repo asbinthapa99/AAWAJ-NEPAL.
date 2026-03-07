@@ -35,6 +35,8 @@ export default function ReportDialog({ postId, onClose }: ReportDialogProps) {
     const { error } = await supabase.from('reports').insert({
       post_id: postId,
       reporter_id: user.id,
+      target_type: 'post',
+      target_id: postId,
       reason,
     });
 

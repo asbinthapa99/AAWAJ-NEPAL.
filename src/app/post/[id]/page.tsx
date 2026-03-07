@@ -61,6 +61,7 @@ export default function PostDetailPage({
       .from('posts')
       .select('*, author:profiles!author_id(*)')
       .eq('id', id)
+      .is('deleted_at', null)
       .single();
 
     setPost(data);
@@ -124,7 +125,7 @@ export default function PostDetailPage({
     if (!user || user.id !== post.author_id) return;
     if (!window.confirm('Delete this post? This action cannot be undone.')) return;
 
-    const { error } = await supabase.from('posts').delete().eq('id', post.id);
+    const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id);
     if (error) {
       alert('Failed to delete post: ' + error.message);
       return;
@@ -235,6 +236,7 @@ export default function PostDetailPage({
             <div className="flex items-center gap-2">
               <SupportButton
                 postId={post.id}
+                postAuthorId={post.author_id}
                 initialCount={post.supports_count}
                 initialSupported={userSupported}
               />
@@ -275,7 +277,7 @@ export default function PostDetailPage({
 
         {/* Comments */}
         <div className="mt-6 bg-white dark:bg-[#242526] rounded-lg shadow-sm border border-gray-200 dark:border-[#393a3b] p-6">
-          <CommentSection postId={post.id} />
+          <CommentSection postId={post.id} postAuthorId={post.author_id} />
         </div>
 
         {/* Report Dialog */}

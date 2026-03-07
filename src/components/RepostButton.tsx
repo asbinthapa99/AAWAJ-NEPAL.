@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from './AuthProvider';
 import { Repeat2, Loader2, X } from 'lucide-react';
@@ -17,14 +19,18 @@ export default function RepostButton({
     initialReposted = false,
 }: RepostButtonProps) {
     const { user } = useAuth();
+    const router = useRouter();
     const [reposted, setReposted] = useState(initialReposted);
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [caption, setCaption] = useState('');
 
-    if (!user) return null;
-
     const handleRepost = async () => {
+        if (!user) {
+            router.push('/auth/login');
+            return;
+        }
+
         setLoading(true);
         const supabase = createClient();
 
@@ -57,6 +63,11 @@ export default function RepostButton({
     };
 
     const handleUnrepost = async () => {
+        if (!user) {
+            router.push('/auth/login');
+            return;
+        }
+
         setLoading(true);
         const supabase = createClient();
 
@@ -72,27 +83,39 @@ export default function RepostButton({
         setLoading(false);
     };
 
+    const handleClick = () => {
+        if (!user) {
+            router.push('/auth/login');
+            return;
+        }
+        if (reposted) {
+            handleUnrepost();
+        } else {
+            setShowModal(true);
+        }
+    };
+
     return (
         <>
             <button
-                onClick={() => (reposted ? handleUnrepost() : setShowModal(true))}
+                onClick={handleClick}
                 disabled={loading}
-                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-lg text-sm font-semibold transition-all group ${reposted
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all group ${reposted
                         ? 'text-green-600 dark:text-green-400'
-                        : 'text-gray-500 dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                     }`}
                 aria-label={reposted ? 'Remove repost' : 'Repost'}
             >
                 {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                    <Repeat2 className="w-4 h-4 sm:w-5 sm:h-5 group-hover:scale-110 transition-transform" />
+                    <Repeat2 className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                 )}
                 <span className="hidden sm:inline">{reposted ? 'Reposted' : 'Repost'}</span>
             </button>
 
-            {/* Repost Modal */}
-            {showModal && (
+            {/* Repost Modal — portalled to body to escape overflow-hidden */}
+            {showModal && typeof document !== 'undefined' && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white dark:bg-[#242526] rounded-xl p-5 max-w-md w-full shadow-2xl border border-gray-200 dark:border-[#393a3b]">
                         <div className="flex items-center justify-between mb-4">
@@ -133,7 +156,8 @@ export default function RepostButton({
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     );

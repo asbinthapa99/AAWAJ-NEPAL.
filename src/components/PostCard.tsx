@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
 import { Post } from '@/lib/types';
 import { getCategoryInfo } from '@/lib/categories';
 import { URGENCY_CONFIG } from '@/lib/constants';
@@ -29,6 +30,8 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
   const [showReport, setShowReport] = useState(false);
   const [saved, setSaved] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const category = getCategoryInfo(post.category);
   const urgency = URGENCY_CONFIG[post.urgency as keyof typeof URGENCY_CONFIG] ?? URGENCY_CONFIG.medium;
 
@@ -37,7 +40,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
     if (!window.confirm('Delete this post? This action cannot be undone.')) return;
     setDeleting(true);
     const supabase = createClient();
-    const { error } = await supabase.from('posts').delete().eq('id', post.id);
+    const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id);
     if (error) { alert('Failed to delete post: ' + error.message); setDeleting(false); return; }
     if (onDeleted) { onDeleted(post.id); } else { window.location.reload(); }
   };
@@ -50,10 +53,23 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
 
   useEffect(() => {
     if (!showMenu) return;
-    const closeMenu = (event: MouseEvent) => { if (menuRef.current && !menuRef.current.contains(event.target as Node)) setShowMenu(false); };
+    const closeMenu = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
+          menuBtnRef.current && !menuBtnRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
     document.addEventListener('mousedown', closeMenu);
     return () => document.removeEventListener('mousedown', closeMenu);
   }, [showMenu]);
+
+  const toggleMenu = () => {
+    if (!showMenu && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+    setShowMenu(!showMenu);
+  };
 
   return (
     <>
@@ -90,22 +106,10 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
           </div>
           <div className="flex items-center gap-1">
             <Badge variant={urgency.label === 'Critical' || urgency.label === 'High' ? 'destructive' : urgency.label === 'Low' ? 'success' : 'warning'}>{urgency.label}</Badge>
-            <div ref={menuRef} className="relative">
-              <button onClick={() => setShowMenu(!showMenu)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
+            <div className="relative">
+              <button ref={menuBtnRef} onClick={toggleMenu} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-accent transition-colors">
                 <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
               </button>
-              {showMenu && (
-                <div className="absolute right-0 top-9 w-48 bg-popover rounded-xl shadow-xl border border-border overflow-hidden z-20" style={{ animation: 'scaleIn 0.12s ease' }}>
-                  <button onClick={() => { setShowMenu(false); setShowReport(true); }} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-accent transition-colors">
-                    <Flag className="w-4 h-4" /> Report
-                  </button>
-                  {user?.id === post.author_id && (
-                    <button onClick={() => { setShowMenu(false); handleDelete(); }} disabled={deleting} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-destructive hover:bg-destructive/5 transition-colors">
-                      <Trash2 className="w-4 h-4" /> Delete
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -120,7 +124,7 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
         {/* Action Row */}
         <div className="px-4 pt-2 flex items-center justify-between">
           <div className="flex items-center -ml-2">
-            <SupportButton postId={post.id} initialCount={post.supports_count} />
+            <SupportButton postId={post.id} postAuthorId={post.author_id} initialCount={post.supports_count} />
             <Link href={`/post/${post.id}`} className="flex items-center gap-1 px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground transition-colors group">
               <MessageCircle className="w-[22px] h-[22px] group-hover:scale-110 transition-transform" strokeWidth={1.5} />
             </Link>
@@ -156,6 +160,23 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
         )}
         <div className="h-2" />
       </article>
+      {showMenu && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed w-48 bg-popover rounded-xl shadow-xl border border-border overflow-hidden z-50"
+          style={{ top: menuPos.top, right: menuPos.right, animation: 'scaleIn 0.12s ease' }}
+        >
+          <button onClick={() => { setShowMenu(false); setShowReport(true); }} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm hover:bg-accent transition-colors">
+            <Flag className="w-4 h-4" /> Report
+          </button>
+          {user?.id === post.author_id && (
+            <button onClick={() => { setShowMenu(false); handleDelete(); }} disabled={deleting} className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-destructive hover:bg-destructive/5 transition-colors">
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
+          )}
+        </div>,
+        document.body
+      )}
       {showReport && <ReportDialog postId={post.id} onClose={() => setShowReport(false)} />}
     </>
   );

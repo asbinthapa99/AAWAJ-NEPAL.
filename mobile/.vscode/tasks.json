@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Expo Start (Mobile)",
+			"type": "shell",
+			"command": "npx expo start --clear --port 8081",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}
