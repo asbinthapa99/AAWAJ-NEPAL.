@@ -33,7 +33,9 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     setError(null);
 
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim());
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: 'https://aawaj-nepal-app.vercel.app/auth/redirect?redirect_to=guffgaff%3A%2F%2Fauth%2Fcallback'
+    });
     if (err) {
       setError(err.message);
     } else {
