@@ -6,6 +6,16 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
   const next = searchParams.get('next') ?? '/dashboard';
+  const redirectTo = searchParams.get('redirect_to');
+
+  // If this is destined for the Mobile App interceptor, skip the server-side Next.js auth
+  // and immediately drop the user into the client-side redirect page which handles app deep linking!
+  if (redirectTo && redirectTo.includes('auth/callback')) {
+    const forwardUrl = new URL(`${origin}/auth/redirect`);
+    // Forward all query parameters exactly as they came in (including the OTP code)
+    searchParams.forEach((value, key) => forwardUrl.searchParams.append(key, value));
+    return NextResponse.redirect(forwardUrl.toString());
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -33,7 +43,7 @@ export async function GET(request: Request) {
 
       // Auto-create profile for OAuth users (Google, Facebook, etc.)
       const meta = user.user_metadata ?? {};
-      
+
       // Generate base username
       const baseUsername =
         meta.user_name ||
@@ -55,7 +65,7 @@ export async function GET(request: Request) {
           .single();
 
         if (!existingUser) break;
-        
+
         // Add random suffix to make unique
         username = `${baseUsername}_${Math.random().toString(36).substring(2, 8)}`;
         attempts++;

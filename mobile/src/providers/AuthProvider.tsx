@@ -147,13 +147,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Instead of giving Supabase the raw app deep link, give it the Web Interceptor
     // so it flawlessly jumps through Vercel into the App.
-    const webFallbackRedirect = `https://aawaj-nepal.vercel.app/auth/redirect?redirect_to=${encodeURIComponent(appRedirectUrl)}`;
+    const webFallbackRedirect = `https://aawaj-nepal-app.vercel.app/auth/callback`;
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: webFallbackRedirect,  // Force the email link to point directly back to the app!
+        emailRedirectTo: `${webFallbackRedirect}?redirect_to=${encodeURIComponent(appRedirectUrl)}`,  // Force the email link to point directly back to the app!
       },
     });
     return { error: error?.message || null };
