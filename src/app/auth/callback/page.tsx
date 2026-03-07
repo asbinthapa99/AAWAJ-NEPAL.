@@ -19,19 +19,33 @@ export default function AuthCallback() {
             if (accessToken && refreshToken) {
                 setStatus("Redirecting to the App...");
 
-                // Are we coming from Expo Go? We can check query params, or we can just offer a multi-purpose link.
-                // For Expo testing, we'll try to explicitly use the exp:// scheme if passed
+                // Try automatic redirection
                 const urlParams = new URLSearchParams(window.location.search);
                 let redirectApp = urlParams.get("redirect_to") || "guffgaff://auth/callback";
 
-                // Try automatic redirection
                 const appLink = `${redirectApp}#access_token=${accessToken}&refresh_token=${refreshToken}`;
                 window.location.replace(appLink);
 
-                // Fallback timeout in case redirect fails (user can click manually or standard flow continues)
                 setTimeout(() => {
                     setStatus("If you are not redirected automatically, please press the button below.");
                 }, 2500);
+                return;
+            }
+        }
+
+        // Check if this is a standard magic link code-based redirect that we want to push to the app
+        if (typeof window !== "undefined" && window.location.search) {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('code') || window.location.href.includes('type=magiclink')) {
+                // Attempt to trigger the deep link blindly so the phone app intercepts the rest
+                const redirectApp = urlParams.get("redirect_to") || "guffgaff://auth/callback";
+                // We just pass the entire fresh URL to the app
+                window.location.replace(`${redirectApp}?${urlParams.toString()}`);
+
+                setTimeout(() => {
+                    // If it failed to open the app, we let it fall through to the handleAuth flow
+                    handleAuth();
+                }, 1000);
                 return;
             }
         }
@@ -60,7 +74,12 @@ export default function AuthCallback() {
                         const rt = hashParams.get("refresh_token");
                         const urlParams = new URLSearchParams(window.location.search);
                         let redirectApp = urlParams.get("redirect_to") || "guffgaff://auth/callback";
-                        window.location.href = `${redirectApp}#access_token=${at}&refresh_token=${rt}`;
+
+                        if (at && rt) {
+                            window.location.href = `${redirectApp}#access_token=${at}&refresh_token=${rt}`;
+                        } else {
+                            window.location.href = `${redirectApp}?${urlParams.toString()}`;
+                        }
                     }}
                     className="mt-6 bg-[#E12B28] hover:bg-[#C92220] transition-colors text-white font-medium py-3 px-8 rounded-full"
                 >
