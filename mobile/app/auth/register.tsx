@@ -60,7 +60,11 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <View style={styles.scroll}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
           {/* Top Section - Left empty to show the beautiful 3D logo */}
           <View style={styles.topSection} />
 
@@ -163,7 +167,7 @@ export default function RegisterScreen() {
             </View>
 
           </View>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );

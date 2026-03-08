@@ -9,12 +9,18 @@ import {
   Switch,
   Alert,
   Linking,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
+import { supabase } from '../../src/lib/supabase';
 
 export default function SettingsScreen() {
   const { c, mode, toggle } = useTheme();
@@ -23,6 +29,36 @@ export default function SettingsScreen() {
 
   const [pauseNotifs, setPauseNotifs] = useState(false);
   const isDark = mode === 'dark';
+
+  // Change password
+  const [pwModalVisible, setPwModalVisible] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 8) {
+      Alert.alert('Too short', 'Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Mismatch', 'Passwords do not match.');
+      return;
+    }
+    setChangingPw(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPw(false);
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      Alert.alert('Done', 'Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPwModalVisible(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
@@ -107,6 +143,20 @@ export default function SettingsScreen() {
                 <Ionicons name="settings-outline" size={18} color={c.mutedForeground} />
               </View>
               <Text style={[styles.settingLabel, { color: c.foreground }]}>General settings</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
+          </TouchableOpacity>
+
+          {/* Change Password */}
+          <TouchableOpacity
+            style={[styles.settingRow, { borderBottomColor: c.border }]}
+            onPress={() => setPwModalVisible(true)}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconCircle, { backgroundColor: '#ef4444' + '22' }]}>
+                <Ionicons name="lock-closed-outline" size={18} color="#ef4444" />
+              </View>
+              <Text style={[styles.settingLabel, { color: c.foreground }]}>Change password</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={c.mutedForeground} />
           </TouchableOpacity>
@@ -210,6 +260,88 @@ export default function SettingsScreen() {
           GuffGaff v1.0.0
         </Text>
       </ScrollView>
+
+      {/* ─── Change Password Modal ─── */}
+      <Modal
+        visible={pwModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPwModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={[styles.modalSheet, { backgroundColor: c.card, borderColor: c.border }]}>
+            {/* Handle */}
+            <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
+
+            <Text style={[styles.modalTitle, { color: c.foreground }]}>Change Password</Text>
+            <Text style={[styles.modalSubtitle, { color: c.mutedForeground }]}>
+              Enter a new password below. No old password needed.
+            </Text>
+
+            {/* New password */}
+            <View style={[styles.inputWrap, { backgroundColor: c.muted, borderColor: c.border }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
+              <TextInput
+                style={[styles.input, { color: c.foreground }]}
+                placeholder="New password"
+                placeholderTextColor={c.mutedForeground}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showNew}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity onPress={() => setShowNew((v) => !v)}>
+                <Ionicons name={showNew ? 'eye-off-outline' : 'eye-outline'} size={18} color={c.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Confirm password */}
+            <View style={[styles.inputWrap, { backgroundColor: c.muted, borderColor: c.border }]}>
+              <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
+              <TextInput
+                style={[styles.input, { color: c.foreground }]}
+                placeholder="Confirm password"
+                placeholderTextColor={c.mutedForeground}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirm}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity onPress={() => setShowConfirm((v) => !v)}>
+                <Ionicons name={showConfirm ? 'eye-off-outline' : 'eye-outline'} size={18} color={c.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Actions */}
+            <TouchableOpacity
+              style={[styles.saveBtn, changingPw && { opacity: 0.6 }]}
+              onPress={handleChangePassword}
+              disabled={changingPw}
+            >
+              {changingPw
+                ? <ActivityIndicator color="#000" />
+                : <Text style={styles.saveBtnText}>Update Password</Text>
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cancelBtn, { borderColor: c.border }]}
+              onPress={() => {
+                setNewPassword('');
+                setConfirmPassword('');
+                setPwModalVisible(false);
+              }}
+            >
+              <Text style={[styles.cancelBtnText, { color: c.mutedForeground }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -346,5 +478,74 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     marginTop: 20,
+  },
+
+  /* ── Change Password Modal ── */
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 0.5,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 12,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 0.5,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+    marginBottom: 14,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+  },
+  saveBtn: {
+    backgroundColor: '#c6f740',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  saveBtnText: {
+    color: '#000',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  cancelBtn: {
+    borderRadius: 12,
+    borderWidth: 0.5,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  cancelBtnText: {
+    fontSize: 15,
+    fontWeight: '500',
   },
 });
