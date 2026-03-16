@@ -1,5 +1,7 @@
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = require('./config');
+
 async function checkSchema() {
-    const url = 'https://qcngfiwliorztaafhhwo.supabase.co/rest/v1/?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjbmdmaXdsaW9yenRhYWZoaHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTkyMjUsImV4cCI6MjA4NzM3NTIyNX0.OIpL8lrXS1ZuH3SD0svS-i0wPfrkEc57bUCUwbnf5ZY';
+    const url = `${SUPABASE_URL}/rest/v1/?apikey=${SUPABASE_ANON_KEY}`;
 
     const res = await fetch(url);
     const json = await res.json();
