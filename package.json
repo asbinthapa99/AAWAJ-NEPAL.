@@ -5,10 +5,13 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
-    "dev:qr": "node dev.js",
+    "dev:qr": "node scripts/dev.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:check": "node scripts/check_tables.js",
+    "db:verify": "node scripts/verify_fix.js",
+    "db:diagnose": "node scripts/diagnose_and_fix.js"
   },
   "dependencies": {
     "@hcaptcha/react-hcaptcha": "^2.0.2",
@@ -29,8 +32,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.1.6",
     "qrcode-terminal": "^0.12.0",
     "tailwindcss": "^4",
     "typescript": "^5"

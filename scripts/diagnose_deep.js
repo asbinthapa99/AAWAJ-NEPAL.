@@ -1,9 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = require('./config');
 
-const supabase = createClient(
-    'https://qcngfiwliorztaafhhwo.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjbmdmaXdsaW9yenRhYWZoaHdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE3OTkyMjUsImV4cCI6MjA4NzM3NTIyNX0.OIpL8lrXS1ZuH3SD0svS-i0wPfrkEc57bUCUwbnf5ZY'
-);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function deepDiagnose() {
     // 1. Check supports table columns
