@@ -4,10 +4,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Finnhub WebSocket ────────────────────────────────────────────────────────
-// Keys loaded from .env file (see .env.example)
-import { FINNHUB_API_KEY as ENV_FINNHUB_KEY } from '@env';
+// Keys loaded from .env (see .env.example)
+let _finnhubKey: string;
+try {
+  const env = require('@env');
+  _finnhubKey = env.FINNHUB_API_KEY;
+} catch {
+  _finnhubKey = process.env.FINNHUB_API_KEY ?? '';
+}
 
-export const FINNHUB_API_KEY = ENV_FINNHUB_KEY;
+export const FINNHUB_API_KEY = _finnhubKey;
 export const FINNHUB_WS_URL = `wss://ws.finnhub.io?token=${FINNHUB_API_KEY}`;
 
 // ── Reconnection ─────────────────────────────────────────────────────────────

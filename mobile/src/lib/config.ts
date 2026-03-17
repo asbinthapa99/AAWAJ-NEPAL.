@@ -1,6 +1,18 @@
 // Supabase configuration for the mobile app
-// Keys are loaded from .env file (see .env.example for required variables)
-import { SUPABASE_URL as ENV_URL, SUPABASE_ANON_KEY as ENV_KEY } from '@env';
+// Keys loaded from .env via react-native-dotenv (@env module)
+// Falls back to process.env for compatibility
 
-export const SUPABASE_URL = ENV_URL;
-export const SUPABASE_ANON_KEY = ENV_KEY;
+let _supabaseUrl: string;
+let _supabaseAnonKey: string;
+
+try {
+  const env = require('@env');
+  _supabaseUrl = env.SUPABASE_URL;
+  _supabaseAnonKey = env.SUPABASE_ANON_KEY;
+} catch {
+  _supabaseUrl = process.env.SUPABASE_URL ?? '';
+  _supabaseAnonKey = process.env.SUPABASE_ANON_KEY ?? '';
+}
+
+export const SUPABASE_URL = _supabaseUrl;
+export const SUPABASE_ANON_KEY = _supabaseAnonKey;
