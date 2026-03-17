@@ -17,15 +17,15 @@ export default function MarketsLayout() {
         headerShadowVisible: false, // removes the generic border bottom
       }}
     >
-      <Stack.Screen name="stocks" options={{ title: 'Stocks' }} />
-      <Stack.Screen name="nepse" options={{ title: 'NEPSE Market' }} />
+      <Stack.Screen name="stocks" options={{ headerShown: false }} />
+      <Stack.Screen name="nepse" options={{ headerShown: false }} />
       <Stack.Screen name="gold" options={{ headerShown: false }} />
       <Stack.Screen name="forex" options={{ headerShown: false }} />
       {/* Fallbacks for unfinished routes to prevent crashing when tab grid is clicked */}
-      <Stack.Screen name="global" options={{ title: 'Global Markets' }} />
+      <Stack.Screen name="global" options={{ headerShown: false }} />
       <Stack.Screen name="crypto" options={{ headerShown: false }} />
-      <Stack.Screen name="news" options={{ title: 'News' }} />
-      <Stack.Screen name="portfolio" options={{ title: 'Portfolio' }} />
+      <Stack.Screen name="news" options={{ headerShown: false }} />
+      <Stack.Screen name="portfolio" options={{ headerShown: false }} />
     </Stack>
   );
 }

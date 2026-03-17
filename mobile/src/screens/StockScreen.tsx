@@ -519,12 +519,15 @@ export default function StockScreen() {
   const handleBack = useCallback(() => {
     console.log('Back button pressed');
     try {
-      // Navigate back to the markets tab
-      router.replace('/(tabs)/markets');
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/markets');
+      }
     } catch (error) {
       console.error('Navigation error:', error);
-      // Fallback to home
-      router.replace('/(tabs)/home');
+      // Fallback
+      router.replace('/(tabs)/markets');
     }
   }, []);
 

@@ -185,7 +185,7 @@ export default function GoldSilverScreen() {
         <TouchableOpacity
           onPress={() => {
             if (router.canGoBack()) {
-              router.back();
+              router.canGoBack() ? router.back() : router.replace('/(tabs)/markets');
             } else {
               router.replace('/(tabs)/markets' as any);
             }

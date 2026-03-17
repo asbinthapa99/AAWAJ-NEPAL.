@@ -401,7 +401,7 @@ export default function CryptoScreen() {
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.back()}
+            onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)/markets')}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={[styles.backBtn, { backgroundColor: surfaceBg, borderColor: cardBorder }]}
           >
