@@ -4,11 +4,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Finnhub WebSocket ────────────────────────────────────────────────────────
-// Free tier: wss://ws.finnhub.io?token=YOUR_API_KEY
-// Sign up at https://finnhub.io to get a free API key.
-export const FINNHUB_WS_URL = 'wss://ws.finnhub.io?token=d6phuohr01qo88aja0l0d6phuohr01qo88aja0lg';
-// Finnhub API key — replace if rotating
-export const FINNHUB_API_KEY = 'd6phuohr01qo88aja0l0d6phuohr01qo88aja0lg';
+// Keys loaded from .env file (see .env.example)
+import { FINNHUB_API_KEY as ENV_FINNHUB_KEY } from '@env';
+
+export const FINNHUB_API_KEY = ENV_FINNHUB_KEY;
+export const FINNHUB_WS_URL = `wss://ws.finnhub.io?token=${FINNHUB_API_KEY}`;
 
 // ── Reconnection ─────────────────────────────────────────────────────────────
 export const RECONNECT_BASE_DELAY_MS = 1_000;
