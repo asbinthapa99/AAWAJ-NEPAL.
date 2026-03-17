@@ -12,15 +12,17 @@ export function ParticlesBackground() {
         // Detect theme for particle colors
         const isDark = document.documentElement.classList.contains('dark') ||
             window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setTheme(isDark ? 'dark' : 'light');
+        
+        const updateTheme = (isDarkNow: boolean) => {
+            setTheme(isDarkNow ? 'dark' : 'light');
+        };
+        
+        // Set initial theme
+        updateTheme(isDark);
 
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === 'class') {
-                    const isDarkNow = document.documentElement.classList.contains('dark');
-                    setTheme(isDarkNow ? 'dark' : 'light');
-                }
-            });
+        const observer = new MutationObserver(() => {
+            const isDarkNow = document.documentElement.classList.contains('dark');
+            updateTheme(isDarkNow);
         });
 
         observer.observe(document.documentElement, { attributes: true });

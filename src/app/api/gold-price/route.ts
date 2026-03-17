@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-// @ts-ignore
 import { getGoldPrices } from 'hamro-patro-scraper';
 
 type RateEntry = {
@@ -21,6 +20,9 @@ type GoldPriceResponse = {
 const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
 const RATE_LIMIT_MAX = 60;
 const CACHE_TTL_MS = 2 * 60 * 1000;
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+
+let lastCleanup = Date.now();
 
 const rateLimitMap = new Map<string, RateEntry>();
 let cache: { data: { items: GoldItem[]; updated_at: string }; expiresAt: number } | null = null;
@@ -30,6 +32,17 @@ const getClientIp = (request: Request) =>
 
 const isRateLimited = (ip: string) => {
   const now = Date.now();
+
+  // Periodic cleanup of expired IPs to prevent memory leak
+  if (now - lastCleanup > RATE_LIMIT_CLEANUP_INTERVAL_MS) {
+    rateLimitMap.forEach((val, key) => {
+      if (now - val.start > RATE_LIMIT_WINDOW_MS) {
+        rateLimitMap.delete(key);
+      }
+    });
+    lastCleanup = now;
+  }
+
   const entry = rateLimitMap.get(ip);
 
   if (!entry || now - entry.start > RATE_LIMIT_WINDOW_MS) {

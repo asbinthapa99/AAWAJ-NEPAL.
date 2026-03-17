@@ -1,35 +1,66 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { View, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, withSequence } from 'react-native-reanimated';
+import AnimatedTabIcon from '../../src/components/AnimatedTabIcon';
+import ExpandableFAB from '../../src/components/ExpandableFAB';
+
+// Reanimated pulsating badge for Inbox
+const AnimatedBadge = ({ count }: { count: number }) => {
+  const scale = useSharedValue(1);
+  
+  useEffect(() => {
+    if (count > 0) {
+      scale.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1, false
+      );
+    }
+  }, [count, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
+  if (count <= 0) return null;
+
+  return (
+    <Animated.View style={[styles.badge, animatedStyle]}>
+      <Text style={styles.badgeText}>{count}</Text>
+    </Animated.View>
+  );
+};
 
 export default function TabLayout() {
-  const { c } = useTheme();
+  const { c, mode } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          position: 'absolute',
           backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0, // for Android
-          height: 85,
-          paddingBottom: 24,
-          paddingTop: 8,
+          borderTopWidth: 0.5,
+          borderTopColor: 'rgba(255,255,255,0.1)',
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60,
         },
         tabBarBackground: () => (
           <BlurView
-            tint="dark"
-            intensity={80}
+            tint={mode === 'dark' ? 'dark' : 'regular'}
+            intensity={90}
             style={StyleSheet.absoluteFill}
           />
         ),
-        tabBarActiveTintColor: '#ffffff', // bright white for active in dark glass
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.5)', // faded for inactive
+        tabBarActiveTintColor: mode === 'dark' ? '#ffffff' : '#000000',
+        tabBarInactiveTintColor: mode === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '600',
@@ -41,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+            <AnimatedTabIcon name={focused ? 'home' : 'home-outline'} size={size} color={color} focused={focused} />
           ),
         }}
       />
@@ -62,7 +93,25 @@ export default function TabLayout() {
         options={{
           title: 'Reels',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'play-circle' : 'play-circle-outline'} size={size} color={color} />
+            <AnimatedTabIcon name={focused ? 'play-circle' : 'play-circle-outline'} size={size} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedTabIcon name={focused ? 'calendar' : 'calendar-outline'} size={size} color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="markets"
+        options={{
+          title: 'Markets',
+          tabBarIcon: ({ focused, color, size }) => (
+            <AnimatedTabIcon name={focused ? 'bar-chart' : 'bar-chart-outline'} size={size} color={color} focused={focused} />
           ),
         }}
       />
@@ -70,11 +119,7 @@ export default function TabLayout() {
         name="create"
         options={{
           title: '',
-          tabBarIcon: ({ color }) => (
-            <View style={[styles.createButton, { backgroundColor: c.primary }]}>
-              <Ionicons name="add" size={28} color="#fff" />
-            </View>
-          ),
+          tabBarButton: () => <ExpandableFAB />,
         }}
       />
       <Tabs.Screen
@@ -83,10 +128,8 @@ export default function TabLayout() {
           title: 'Inbox',
           tabBarIcon: ({ focused, color, size }) => (
             <View>
-              <Ionicons name={focused ? 'mail' : 'mail-outline'} size={size} color={color} />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>3</Text>
-              </View>
+              <AnimatedTabIcon name={focused ? 'mail' : 'mail-outline'} size={size} color={color} focused={focused} />
+              <AnimatedBadge count={3} />
             </View>
           ),
         }}
@@ -96,7 +139,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ focused, color, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+            <AnimatedTabIcon name={focused ? 'person' : 'person-outline'} size={size} color={color} focused={focused} />
           ),
         }}
       />
@@ -105,19 +148,6 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  createButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24, // perfectly round
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
-  },
   badge: {
     position: 'absolute',
     top: -4,

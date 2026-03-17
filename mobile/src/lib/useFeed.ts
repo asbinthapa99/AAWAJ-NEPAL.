@@ -75,8 +75,6 @@ export function useFeed(options: UseFeedOptions): UseFeedReturn {
   // ─── Core fetch ─────────────────────────────────────
   const fetchPage = useCallback(
     async (cursor: string | null, append: boolean) => {
-      if (!userId) return;
-
       try {
         let result: FeedResult;
 
@@ -125,17 +123,22 @@ export function useFeed(options: UseFeedOptions): UseFeedReturn {
 
   // ─── Initial load + reload on deps change ───────────
   useEffect(() => {
-    if (!enabled || !userId) return;
+    if (!enabled) return;
 
-    cursorRef.current = null;
-    setHasMore(true);
-    setError(null);
-    setLoading(true);
+    const init = async () => {
+      cursorRef.current = null;
+      setHasMore(true);
+      setError(null);
+      setLoading(true);
 
-    fetchPage(null, false).finally(() => {
-      if (isMountedRef.current) setLoading(false);
-    });
-  }, [fetchPage, enabled, userId]);
+      try {
+        await fetchPage(null, false);
+      } finally {
+        if (isMountedRef.current) setLoading(false);
+      }
+    };
+    init();
+  }, [fetchPage, enabled]);
 
   // ─── Pull to refresh ───────────────────────────────
   const refresh = useCallback(async () => {

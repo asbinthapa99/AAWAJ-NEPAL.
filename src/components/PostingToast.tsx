@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Loader2, Megaphone } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 export type PostingStatus = 'idle' | 'posting' | 'success' | 'error';
@@ -29,18 +29,20 @@ export default function PostingToast({ status, errorMessage, onDismiss }: Postin
   useEffect(() => {
     if (status === 'idle') {
       setVisible(false);
-      setStageIndex(0);
-      setProgress(0);
       return;
     }
     setVisible(true);
+    
+    // Reset state when transitioning to posting
+    if (status === 'posting') {
+      setStageIndex(0);
+      setProgress(0);
+    }
   }, [status]);
 
   // Cycle through progress stages while posting
   useEffect(() => {
     if (status !== 'posting') return;
-    setProgress(0);
-    setStageIndex(0);
 
     const progressInterval = setInterval(() => {
       setProgress((p) => {

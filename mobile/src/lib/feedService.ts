@@ -30,20 +30,20 @@ export interface RankingWeights {
 
 const DEFAULT_WEIGHTS: Record<FeedType, RankingWeights> = {
   for_you: {
-    recency: 2.0,
-    engagement: 3.0,
-    relationship: 4.0,
-    popularity: 1.5,
+    recency: 5.0, // Increased heavily to favour new posts
+    engagement: 1.5,
+    relationship: 2.0,
+    popularity: 1.0,
     quality: 1.0,
-    freshness: 3.0,
+    freshness: 4.0, // Increased freshness bonus
   },
   following: {
-    recency: 4.0,
+    recency: 6.0,
     engagement: 1.0,
     relationship: 2.0,
     popularity: 0.5,
     quality: 0.5,
-    freshness: 2.0,
+    freshness: 3.0,
   },
   trending: {
     recency: 1.0,
@@ -54,20 +54,20 @@ const DEFAULT_WEIGHTS: Record<FeedType, RankingWeights> = {
     freshness: 2.0,
   },
   reels: {
-    recency: 1.5,
-    engagement: 3.0,
-    relationship: 2.0,
-    popularity: 3.0,
+    recency: 4.0, // Heavily favour new reels
+    engagement: 2.0,
+    relationship: 1.0,
+    popularity: 2.0,
     quality: 1.5,
-    freshness: 2.5,
+    freshness: 3.0,
   },
   explore: {
-    recency: 1.5,
-    engagement: 3.0,
+    recency: 4.0,
+    engagement: 2.0,
     relationship: 0.5,
-    popularity: 3.5,
+    popularity: 2.0,
     quality: 1.0,
-    freshness: 2.0,
+    freshness: 3.0,
   },
 };
 
@@ -80,7 +80,15 @@ let _followingIds: Set<string> | null = null;
 let _cacheTimestamp = 0;
 const CACHE_TTL = 60_000; // 1 minute
 
-async function ensureFilterCache(userId: string): Promise<void> {
+async function ensureFilterCache(userId?: string): Promise<void> {
+  if (!userId) {
+    _excludedUserIds = new Set<string>();
+    _excludedPostIds = new Set<string>();
+    _followingIds = new Set<string>();
+    _cacheTimestamp = Date.now();
+    return;
+  }
+
   if (_excludedUserIds && Date.now() - _cacheTimestamp < CACHE_TTL) return;
 
   const [blockedRes, mutedRes, reportedRes, followingRes] = await Promise.all([
@@ -133,8 +141,8 @@ function engagementScore(post: Post): number {
   const supports = post.supports_count || 0;
   const comments = post.comments_count || 0;
   const dislikes = post.dislikes_count || 0;
-  const saves    = (post as any).saves_count || 0;
-  const shares   = (post as any).shares_count || 0;
+  const saves = (post as any).saves_count || 0;
+  const shares = (post as any).shares_count || 0;
 
   // Comments are worth more (higher intent), dislikes subtract
   const raw = supports * 2 + comments * 4 + saves * 3 + shares * 3 - dislikes * 1;
@@ -213,12 +221,12 @@ function computeScore(
   interactionCounts?: Map<string, number>,
 ): number {
   return (
-    weights.recency      * recencyScore(post.created_at) +
-    weights.engagement   * engagementScore(post) +
+    weights.recency * recencyScore(post.created_at) +
+    weights.engagement * engagementScore(post) +
     weights.relationship * relationshipScore(post.author_id, followingIds, interactionCounts) +
-    weights.popularity   * popularityScore(post) +
-    weights.quality      * qualityScore(post) +
-    weights.freshness    * freshnessBonus(post.created_at)
+    weights.popularity * popularityScore(post) +
+    weights.quality * qualityScore(post) +
+    weights.freshness * freshnessBonus(post.created_at)
   );
 }
 
@@ -230,7 +238,7 @@ export interface FeedOptions {
   pageSize?: number;
   category?: string | null;
   searchQuery?: string | null;
-  userId: string;           // the authenticated viewer
+  userId?: string;           // the authenticated viewer (optional for guests)
 }
 
 export interface FeedResult {
@@ -314,7 +322,7 @@ interface CandidateOptions {
   fetchSize: number;
   category: string | null;
   searchQuery: string | null;
-  userId: string;
+  userId?: string;
 }
 
 async function fetchCandidates(opts: CandidateOptions): Promise<Post[]> {
@@ -387,7 +395,7 @@ async function fetchCandidates(opts: CandidateOptions): Promise<Post[]> {
 
 // ─── Filtering ───────────────────────────────────────────
 
-function applyFilters(posts: Post[], viewerId: string): Post[] {
+function applyFilters(posts: Post[], viewerId?: string): Post[] {
   return posts.filter((post) => {
     // Skip posts from blocked / muted users
     if (_excludedUserIds?.has(post.author_id)) return false;
@@ -418,7 +426,7 @@ export interface TrendingPost extends Post {
  * Posts that received rapid engagement in the last 6 hours rank highest.
  */
 export async function fetchTrending(
-  userId: string,
+  userId?: string,
   limit = 20,
 ): Promise<TrendingPost[]> {
   await ensureFilterCache(userId);
@@ -467,7 +475,7 @@ export async function fetchTrending(
  * Falls back to recency+engagement when no watch data exists.
  */
 export async function fetchReelsFeed(
-  userId: string,
+  userId?: string,
   cursor: string | null = null,
   pageSize = 10,
 ): Promise<FeedResult> {
@@ -578,9 +586,13 @@ export async function toggleMute(
  * who they follow or interact with.
  */
 export async function getRecommendations(
-  userId: string,
+  userId?: string,
   limit = 10,
 ): Promise<Post[]> {
+  if (!userId) {
+    return (await fetchTrending(undefined, limit)) as Post[];
+  }
+
   await ensureFilterCache(userId);
 
   if (!_followingIds || _followingIds.size === 0) {

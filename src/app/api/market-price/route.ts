@@ -1,7 +1,18 @@
 import { NextResponse } from 'next/server';
 
-// In-memory rate limiting
-const requestMap = new Map<string, { count: number; resetTime: number }>();
+// In-memory rate limiting with automatic cleanup
+const requestMap = new Map<string, { count: number; resetTime: number; lastAccess: number }>();
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+// Clean up expired entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of requestMap.entries()) {
+    if (now > data.resetTime) {
+      requestMap.delete(ip);
+    }
+  }
+}, CLEANUP_INTERVAL);
 
 interface CoinData {
   id: string;
@@ -36,7 +47,7 @@ const isRateLimited = (ip: string): boolean => {
   const data = requestMap.get(ip);
 
   if (!data || now > data.resetTime) {
-    requestMap.set(ip, { count: 1, resetTime: now + 5 * 60 * 1000 }); // 5-minute window
+    requestMap.set(ip, { count: 1, resetTime: now + 5 * 60 * 1000, lastAccess: now });
     return false;
   }
 
@@ -45,6 +56,7 @@ const isRateLimited = (ip: string): boolean => {
   }
 
   data.count++;
+  data.lastAccess = now;
   return false;
 };
 

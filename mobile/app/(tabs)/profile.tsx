@@ -8,7 +8,7 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +19,6 @@ import { supabase } from '../../src/lib/supabase';
 import { Post } from '../../src/lib/types';
 import { timeAgo } from '../../src/lib/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const AVATAR_SIZE = 100;
 
 type TabType = 'feed' | 'reels' | 'tagged';
@@ -28,6 +27,7 @@ export default function ProfileScreen() {
   const { c } = useTheme();
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [reels, setReels] = useState<Post[]>([]);
@@ -133,7 +133,7 @@ export default function ProfileScreen() {
 
       {/* Image */}
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.postCardImage} resizeMode="cover" />
+        <Image source={{ uri: item.image_url }} style={[styles.postCardImage, { height: screenWidth * 0.65 }]} resizeMode="cover" />
       ) : null}
 
       {/* Footer metrics */}
@@ -153,7 +153,7 @@ export default function ProfileScreen() {
 
   /* ─── Reel Grid Tile ─── */
   const GRID_GAP = 2;
-  const TILE_SIZE = (SCREEN_WIDTH - GRID_GAP * 2) / 3;
+  const TILE_SIZE = (screenWidth - GRID_GAP * 2) / 3;
 
   const renderReelTile = ({ item }: { item: Post }) => (
     <TouchableOpacity style={[styles.tile, { width: TILE_SIZE, height: TILE_SIZE }]} activeOpacity={0.85}>
@@ -193,7 +193,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.topBarIconBtn}
-            onPress={() => router.push('/profile/settings' as any)}
+            onPress={() => router.push('/u/settings' as any)}
           >
             <Ionicons name="settings-outline" size={22} color={c.foreground} />
           </TouchableOpacity>
@@ -493,7 +493,6 @@ const styles = StyleSheet.create({
   },
   postCardImage: {
     width: '100%',
-    height: SCREEN_WIDTH * 0.65,
   },
   postCardFooter: {
     flexDirection: 'row',

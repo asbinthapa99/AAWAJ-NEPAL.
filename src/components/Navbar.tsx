@@ -11,6 +11,7 @@ import {
   Home,
   ChevronDown,
   PlayCircle,
+  Calendar,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import NotificationBadge from './NotificationBadge';
@@ -118,6 +119,13 @@ export default function Navbar() {
             >
               <PlayCircle className="w-4 h-4" />
               <span>Reels</span>
+            </Link>
+            <Link
+              href="/calendar"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold transition-all hover:bg-background/70 text-muted-foreground hover:text-foreground"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Calendar</span>
             </Link>
             {user && (
               <Link

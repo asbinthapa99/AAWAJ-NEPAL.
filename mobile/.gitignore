@@ -31,3 +31,12 @@ ios/build/
 
 expo-env.d.ts
 # @end expo-cli
+
+# IDE
+.vscode/
+
+# Build cache
+*.tsbuildinfo
+
+# SQL / Supabase local
+supabase/

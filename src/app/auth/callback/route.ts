@@ -18,10 +18,18 @@ export async function GET(request: Request) {
   }
 
   if (code) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables');
+      return NextResponse.redirect(`${origin}/auth/login?error=server_configuration_error`);
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseKey,
       {
         cookies: {
           getAll() {
@@ -85,8 +93,7 @@ export async function GET(request: Request) {
 
       if (profileError) {
         console.error('Profile creation error:', profileError);
-        // Still redirect to feed even if profile creation failed - user is authenticated
-        return NextResponse.redirect(`${origin}${next}`);
+        return NextResponse.redirect(`${origin}/auth/login?error=profile_creation_failed`);
       }
 
       return NextResponse.redirect(`${origin}${next}`);

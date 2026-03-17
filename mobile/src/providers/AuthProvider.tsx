@@ -122,14 +122,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, username: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, username },
+        data: {
+          full_name: fullName,
+          username,
+        },
       },
     });
-    return { error: error?.message || null };
+    if (error) {
+      // If already registered, try signing in instead
+      if (error.message?.toLowerCase().includes('already')) {
+        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInErr) {
+          return { error: 'Account already exists. Please log in.' };
+        }
+        return { error: null };
+      }
+      return { error: error.message };
+    }
+    // If no session returned (shouldn't happen with autoconfirm), sign in
+    if (!data.session) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: signInErr?.message || null };
+    }
+    return { error: null };
   };
 
   const signOut = async () => {

@@ -5,13 +5,13 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  Animated,
-  Dimensions,
   Modal,
   Alert,
   Share,
-  PixelRatio,
+  useWindowDimensions,
 } from 'react-native';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import AnimatedPressable from './AnimatedPressable';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../providers/ThemeProvider';
@@ -21,24 +21,22 @@ import { toggleSave, toggleMute } from '../lib/feedService';
 import { Post, Comment } from '../lib/types';
 import { timeAgo, categoryColors } from '../lib/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
 interface PostCardProps {
   post: Post;
+  index?: number;
 }
 
-export default function PostCard({ post }: PostCardProps) {
+export default function PostCard({ post, index = 0 }: PostCardProps) {
   const { c } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const [loved, setLoved] = useState(false);
   const [loveCount, setLoveCount] = useState(post.supports_count || 0);
   const [saved, setSaved] = useState(false);
-  const [floatingHearts, setFloatingHearts] = useState<{ id: number; anim: Animated.Value }[]>([]);
   const [menuVisible, setMenuVisible] = useState(false);
   const [previewComments, setPreviewComments] = useState<Comment[]>([]);
-  const heartIdRef = useRef(0);
-  const [imgHeight, setImgHeight] = useState(SCREEN_WIDTH * 0.85);
+  const [imgHeight, setImgHeight] = useState(screenWidth * 0.85);
 
   const author = post.author;
   const categoryColor = categoryColors[post.category] || categoryColors.other;
@@ -94,12 +92,12 @@ export default function PostCard({ post }: PostCardProps) {
           const ratio = h / w;
           // Clamp: min 0.5 (wide landscape), max 1.4 (tall portrait)
           const clamped = Math.min(Math.max(ratio, 0.5), 1.4);
-          setImgHeight(SCREEN_WIDTH * clamped);
+          setImgHeight(screenWidth * clamped);
         }
       },
-      () => {} // ignore error, keep default
+      () => { } // ignore error, keep default
     );
-  }, [post.image_url]);
+  }, [post.image_url, screenWidth]);
 
   // Check if post is saved (bookmarked)
   useEffect(() => {
@@ -115,6 +113,10 @@ export default function PostCard({ post }: PostCardProps) {
       });
   }, [post.id, user]);
 
+  // Shared values for popping animations
+  const likeScale = useSharedValue(1);
+  const saveScale = useSharedValue(1);
+
   const handleSave = useCallback(async () => {
     if (!user) {
       Alert.alert('Sign in required', 'You need to be signed in to save posts.', [
@@ -123,9 +125,18 @@ export default function PostCard({ post }: PostCardProps) {
       ]);
       return;
     }
+
+    // Pop animation map
+    saveScale.value = withSequence(
+      withSpring(1.4, { damping: 10, stiffness: 200 }),
+      withSpring(1, { damping: 10, stiffness: 200 })
+    );
+
     setSaved((prev) => !prev); // optimistic
     const result = await toggleSave(post.id, user.id);
-    setSaved(result.saved);
+    if (!result.saved && result.saved !== undefined) {
+      // Revert if API explicitely returns un-saved while we optimistically assume saved
+    }
   }, [user, post.id, router]);
 
   const handleMuteUser = useCallback(async () => {
@@ -148,15 +159,6 @@ export default function PostCard({ post }: PostCardProps) {
     );
   }, [user, post.author_id, post.author?.full_name]);
 
-  const spawnHeart = useCallback(() => {
-    const id = ++heartIdRef.current;
-    const anim = new Animated.Value(0);
-    setFloatingHearts((prev) => [...prev, { id, anim }]);
-    Animated.timing(anim, { toValue: 1, duration: 900, useNativeDriver: true }).start(() => {
-      setFloatingHearts((prev) => prev.filter((h) => h.id !== id));
-    });
-  }, []);
-
   const handleLove = async () => {
     if (!user) {
       Alert.alert('Sign in required', 'You need to be signed in to react to posts.', [
@@ -165,8 +167,13 @@ export default function PostCard({ post }: PostCardProps) {
       ]);
       return;
     }
-    spawnHeart();
-    setTimeout(spawnHeart, 120);
+
+    // Scale sequence bounding effect
+    likeScale.value = withSequence(
+      withSpring(1.5, { damping: 10, stiffness: 200 }),
+      withSpring(1, { damping: 10, stiffness: 200 })
+    );
+
     if (loved) {
       // Optimistic: un-love
       setLoved(false);
@@ -202,6 +209,14 @@ export default function PostCard({ post }: PostCardProps) {
       }
     }
   };
+
+  const likeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }]
+  }));
+
+  const saveAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: saveScale.value }]
+  }));
 
   const handleDelete = async () => {
     setMenuVisible(false);
@@ -259,7 +274,7 @@ export default function PostCard({ post }: PostCardProps) {
       // Navigate to own profile tab
       router.push('/(tabs)/profile' as any);
     } else {
-      router.push(`/profile/${author.id}` as any);
+      router.push(`/u/${author.id}` as any);
     }
   };
 
@@ -274,7 +289,10 @@ export default function PostCard({ post }: PostCardProps) {
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: c.card, borderBottomColor: c.border }]}>
+    <Animated.View
+      entering={FadeInUp.duration(400).delay(index * 100).springify()}
+      style={[styles.card, { backgroundColor: c.card, borderBottomColor: c.border }]}
+    >
 
       {/* ── Header: Avatar + Username + time + ... ── */}
       <View style={styles.header}>
@@ -330,10 +348,18 @@ export default function PostCard({ post }: PostCardProps) {
         </Text>
       )}
 
-      {/* ── Image ── */}
-      {post.image_url && (
-        <Image source={{ uri: post.image_url }} style={[styles.postImage, { height: imgHeight }]} resizeMode="cover" />
-      )}
+      {/* ── Image or Video ── */}
+      {post.video_url ? (
+        <TouchableOpacity
+          style={[styles.postImage, { width: screenWidth, height: imgHeight, backgroundColor: '#111', justifyContent: 'center', alignItems: 'center' }]}
+          activeOpacity={0.8}
+          onPress={() => router.push(`/post/${post.id}` as any)}
+        >
+          <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.8)" />
+        </TouchableOpacity>
+      ) : post.image_url ? (
+        <Image source={{ uri: post.image_url }} style={[styles.postImage, { width: screenWidth, height: imgHeight }]} resizeMode="cover" />
+      ) : null}
 
       {/* ── Metrics row ── */}
       {(loveCount > 0 || post.comments_count > 0) && (
@@ -345,72 +371,46 @@ export default function PostCard({ post }: PostCardProps) {
             </View>
           )}
           {post.comments_count > 0 && (
-            <Text style={[styles.metricText, { color: c.mutedForeground, marginLeft: 'auto' as any }]}>
+            <Text style={[styles.metricText, styles.metricRight, { color: c.mutedForeground }]}>
               {post.comments_count} comments
             </Text>
           )}
         </View>
       )}
 
+
+
       {/* ── Action Buttons ── */}
       <View style={[styles.actions, { borderBottomColor: c.border }]}>
         {/* Love */}
-        <TouchableOpacity onPress={handleLove} style={styles.actionBtn} activeOpacity={0.7}>
-          <View style={styles.actionInner}>
-            <Ionicons
-              name={loved ? 'heart' : 'heart-outline'}
-              size={21}
-              color={loved ? c.rose : c.mutedForeground}
-            />
-            {floatingHearts.map((heart) => (
-              <Animated.Text
-                key={heart.id}
-                pointerEvents="none"
-                style={[
-                  styles.floatingHeart,
-                  {
-                    opacity: heart.anim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 0.9, 0] }),
-                    transform: [
-                      { translateY: heart.anim.interpolate({ inputRange: [0, 1], outputRange: [0, -55] }) },
-                      { scale: heart.anim.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.5, 1.2, 0.7] }) },
-                    ],
-                  },
-                ]}
-              >❤️</Animated.Text>
-            ))}
-          </View>
+        <AnimatedPressable onPress={handleLove} style={styles.actionBtn}>
+          <Animated.View style={likeAnimatedStyle}>
+            <Text style={styles.actionEmoji}>{loved ? '❤️' : '🤍'}</Text>
+          </Animated.View>
           <Text style={[styles.actionLabel, { color: loved ? c.rose : c.mutedForeground }]}>Love</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Comment */}
-        <TouchableOpacity onPress={handleComment} style={styles.actionBtn} activeOpacity={0.7}>
-          <View style={styles.actionInner}>
-            <Ionicons name="chatbubble-outline" size={20} color={c.mutedForeground} />
-          </View>
+        <AnimatedPressable onPress={handleComment} style={styles.actionBtn}>
+          <Text style={styles.actionEmoji}>💬</Text>
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Comment</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Share */}
-        <TouchableOpacity onPress={handleShare} style={styles.actionBtn} activeOpacity={0.7}>
-          <View style={styles.actionInner}>
-            <Ionicons name="arrow-redo-outline" size={21} color={c.mutedForeground} />
-          </View>
+        <AnimatedPressable onPress={handleShare} style={styles.actionBtn}>
+          <Text style={styles.actionEmoji}>↗</Text>
           <Text style={[styles.actionLabel, { color: c.mutedForeground }]}>Share</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
         {/* Save / Bookmark */}
-        <TouchableOpacity onPress={handleSave} style={styles.actionBtn} activeOpacity={0.7}>
-          <View style={styles.actionInner}>
-            <Ionicons
-              name={saved ? 'bookmark' : 'bookmark-outline'}
-              size={20}
-              color={saved ? '#eab308' : c.mutedForeground}
-            />
-          </View>
+        <AnimatedPressable onPress={handleSave} style={styles.actionBtn}>
+          <Animated.View style={saveAnimatedStyle}>
+            <Text style={styles.actionEmoji}>{saved ? '🔖' : '📑'}</Text>
+          </Animated.View>
           <Text style={[styles.actionLabel, { color: saved ? '#eab308' : c.mutedForeground }]}>
             {saved ? 'Saved' : 'Save'}
           </Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       {/* ── Comment Preview ── */}
@@ -469,16 +469,16 @@ export default function PostCard({ post }: PostCardProps) {
               </TouchableOpacity>
             )}
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.menuItem, styles.menuCancel, { borderTopColor: c.border }]}
               onPress={() => setMenuVisible(false)}
             >
               <Text style={[styles.menuItemText, { color: c.mutedForeground }]}>Cancel</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -557,7 +557,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   postImage: {
-    width: SCREEN_WIDTH,
     minHeight: 200,
   },
   // ── Metrics ──
@@ -577,6 +576,10 @@ const styles = StyleSheet.create({
   metricText: {
     fontSize: 13,
   },
+  metricRight: {
+    flexGrow: 1,
+    textAlign: 'right',
+  },
   // ── Action Bar ──
   actions: {
     flexDirection: 'row',
@@ -588,21 +591,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 9,
-    gap: 5,
-  },
-  actionInner: {
-    position: 'relative',
+    paddingVertical: 10,
+    gap: 4,
   },
   actionLabel: {
     fontSize: 14,
     fontWeight: '600',
   },
-  floatingHeart: {
-    position: 'absolute',
-    top: -10,
-    left: -2,
-    fontSize: 18,
+  actionEmoji: {
+    fontSize: 17,
+    lineHeight: 22,
   },
   // ── Comments Preview ──
   commentsPreview: {

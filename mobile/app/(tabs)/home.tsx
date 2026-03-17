@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { BlurView } from 'expo-blur';
 import {
   View,
   FlatList,
@@ -12,24 +13,45 @@ import {
   ScrollView,
   Alert,
   ViewToken,
+  Image,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
 import { supabase } from '../../src/lib/supabase';
-import { Post } from '../../src/lib/types';
 import PostCard from '../../src/components/PostCard';
 import SkeletonCard from '../../src/components/SkeletonCard';
 import { useRouter } from 'expo-router';
-import { useFeed, type UseFeedReturn } from '../../src/lib/useFeed';
+import { useFeed } from '../../src/lib/useFeed';
 import type { FeedType } from '../../src/lib/feedService';
 
 const FEED_TABS = [
-  { label: 'For You',   feedType: 'for_you'   as FeedType },
-  { label: 'Following', feedType: 'following'  as FeedType },
-  { label: 'Trending',  feedType: 'trending'   as FeedType },
+  { label: 'For You', feedType: 'for_you' as FeedType },
+  { label: 'Following', feedType: 'following' as FeedType },
+  { label: 'Trending', feedType: 'trending' as FeedType },
 ] as const;
+
+const ISSUE_CATEGORIES = [
+  { label: 'Infrastructure', value: 'infrastructure', icon: '🏗️' },
+  { label: 'Education', value: 'education', icon: '📚' },
+  { label: 'Health', value: 'health', icon: '🏥' },
+  { label: 'Environment', value: 'environment', icon: '🌿' },
+  { label: 'Governance', value: 'governance', icon: '🏛️' },
+  { label: 'Safety', value: 'safety', icon: '🛡️' },
+  { label: 'Other', value: 'other', icon: '💬' },
+];
+
+const URGENCY_LEVELS = [
+  { label: 'Low', value: 'low', color: '#22c55e' },
+  { label: 'Medium', value: 'medium', color: '#eab308' },
+  { label: 'High', value: 'high', color: '#f97316' },
+  { label: 'Critical', value: 'critical', color: '#ef4444' },
+];
 
 export default function HomeScreen() {
   const { c, mode } = useTheme();
@@ -37,20 +59,51 @@ export default function HomeScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<FeedType>('for_you');
   const [searchQuery, setSearchQuery] = useState('');
+  const flatListRef = useRef<FlatList>(null);
+  
+  // Scroll animation value
+  const scrollY = useRef(new Animated.Value(0)).current;
 
-  // ─── Feed hook replaces all inline fetch/pagination logic ─────
+  // Interpolations for hiding header elements
+  const tabHeight = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [45, 0],
+    extrapolate: 'clamp',
+  });
+
+  const tabOpacity = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const notifWidth = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [36, 0], // Initial width of iconBtn is 36
+    extrapolate: 'clamp',
+  });
+  
+  const notifMargin = scrollY.interpolate({
+    inputRange: [0, 50],
+    outputRange: [8, 0],
+    extrapolate: 'clamp',
+  });
+
   const feed = useFeed({
     feedType: activeTab,
     userId: user?.id,
     searchQuery: searchQuery.trim() || null,
   });
 
-  // ─── Impression tracking on viewable items ─────────────────
+  // Impression tracking — use a ref so the callback always gets the latest feed
+  const trackViewRef = useRef(feed.trackView);
+  trackViewRef.current = feed.trackView;
+
   const onViewableItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       viewableItems.forEach((v) => {
         if (v.isViewable && v.item?.id) {
-          feed.trackView(v.item.id);
+          trackViewRef.current(v.item.id);
         }
       });
     },
@@ -63,36 +116,174 @@ export default function HomeScreen() {
   const [issueContent, setIssueContent] = useState('');
   const [issueCategory, setIssueCategory] = useState('other');
   const [issueUrgency, setIssueUrgency] = useState('medium');
+  const [issueImageUri, setIssueImageUri] = useState<string | null>(null);
   const [isSubmittingIssue, setIsSubmittingIssue] = useState(false);
 
-  const renderHeader = () => (
-    <View>
-      {/* App Header */}
-      <View style={[styles.header, { borderBottomColor: c.border }]}>
-        <View>
-          <Text style={[styles.logo, { color: c.foreground }]}>GuffGaff</Text>
-          <Text style={[styles.logoSub, { color: c.mutedForeground }]}>गफगाफ</Text>
-        </View>
-        <View style={styles.headerRight}>
-          {/* Find / Explore */}
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: c.muted }]}
-            onPress={() => router.push('/(tabs)/explore' as any)}
-          >
-            <Ionicons name="search" size={18} color={c.foreground} />
-          </TouchableOpacity>
-          {/* Notifications */}
-          <TouchableOpacity
-            style={[styles.iconBtn, { backgroundColor: c.muted }]}
-            onPress={() => router.push('/notifications' as any)}
-          >
-            <Ionicons name="notifications-outline" size={18} color={c.foreground} />
-          </TouchableOpacity>
-        </View>
-      </View>
+  // Tap logo → scroll to top and refresh
+  const handleLogoTap = () => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    setTimeout(() => {
+      feed.refresh();
+    }, 300);
+  };
 
+  // Pick image for raise issue
+  const pickIssueImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setIssueImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleSubmitIssue = async () => {
+    if (!issueTitle.trim() || !issueContent.trim()) {
+      Alert.alert('Error', 'Please fill in the title and description');
+      return;
+    }
+    if (!user) return;
+
+    setIsSubmittingIssue(true);
+
+    let image_url: string | null = null;
+
+    // Upload image if selected
+    if (issueImageUri) {
+      try {
+        const manipulated = await manipulateAsync(issueImageUri, [], {
+          compress: 0.85,
+          format: SaveFormat.JPEG,
+        });
+
+        const response = await fetch(manipulated.uri);
+        const blob = await response.blob();
+        const fileName = `issue_${user.id}_${Date.now()}.jpg`;
+
+        const { data, error: uploadError } = await supabase.storage
+          .from('post-images')
+          .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+
+        if (uploadError) {
+          console.log('[Issue Upload] error:', uploadError.message);
+          Alert.alert('Upload Error', uploadError.message);
+          setIsSubmittingIssue(false);
+          return;
+        } else if (data) {
+          const { data: urlData } = supabase.storage.from('post-images').getPublicUrl(data.path);
+          image_url = urlData.publicUrl;
+        }
+      } catch (e: any) {
+        console.log('[Issue Upload] exception:', e.message);
+        Alert.alert('Upload Error', 'Failed to process image');
+        setIsSubmittingIssue(false);
+        return;
+      }
+    }
+
+    const { error } = await supabase.from('posts').insert({
+      author_id: user.id,
+      title: issueTitle.trim(),
+      content: issueContent.trim(),
+      category: issueCategory,
+      urgency: issueUrgency,
+      district: profile?.district || null,
+      image_url,
+    });
+    setIsSubmittingIssue(false);
+
+    if (error) {
+      Alert.alert('Error', 'Failed to submit issue. Please try again.');
+    } else {
+      setIssueTitle('');
+      setIssueContent('');
+      setIssueCategory('other');
+      setIssueUrgency('medium');
+      setIssueImageUri(null);
+      setRaiseIssueVisible(false);
+      Alert.alert('Success', 'Your issue has been raised! 📢');
+      feed.refresh();
+    }
+  };
+
+  // ─── Render functions (NOT components to avoid re-mount issues) ────
+
+  const renderStickyHeader = () => (
+    <View style={[styles.stickyHeaderContainer, { shadowColor: mode === 'dark' ? '#000' : '#888' }]}>
+      <BlurView
+        tint={mode === 'dark' ? 'dark' : 'prominent'}
+        intensity={90}
+        style={styles.stickyHeader}
+      >
+        <SafeAreaView edges={['top']} style={{ flex: 1 }}>
+        {/* Top Row: Logo + Action Buttons */}
+        <View style={[styles.topRow, { borderBottomColor: c.border }]}>
+          <TouchableOpacity onPress={handleLogoTap} activeOpacity={0.7}>
+            <Text style={[styles.logo, { color: c.foreground }]}>GuffGaff</Text>
+            <Text style={[styles.logoSub, { color: c.mutedForeground }]}>गफगाफ</Text>
+          </TouchableOpacity>
+          <View style={[styles.headerRight, { gap: 0 }]}>
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: c.muted }]}
+              onPress={() => router.push('/(tabs)/explore' as any)}
+            >
+              <Ionicons name="search" size={18} color={c.foreground} />
+            </TouchableOpacity>
+
+            <Animated.View style={{ width: notifWidth, opacity: tabOpacity, marginLeft: notifMargin, overflow: 'hidden' }}>
+              <TouchableOpacity
+                style={[styles.iconBtn, { backgroundColor: c.muted, width: 36 }]}
+                onPress={() => router.push('/notifications' as any)}
+              >
+                <Ionicons name="notifications-outline" size={18} color={c.foreground} />
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={{ marginLeft: notifMargin }}>
+              <TouchableOpacity
+                style={[styles.iconBtn, { backgroundColor: c.muted }]}
+                onPress={() => router.push('/u/settings' as any)}
+              >
+                <Ionicons name="settings-outline" size={18} color={c.foreground} />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </View>
+
+        {/* Feed Tabs */}
+        <Animated.View style={[styles.tabRow, { borderBottomColor: c.border, height: tabHeight, opacity: tabOpacity, overflow: 'hidden' }]}>
+          {FEED_TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab.feedType}
+              onPress={() => setActiveTab(tab.feedType)}
+              style={[
+                styles.tab,
+                activeTab === tab.feedType && { borderBottomColor: c.primary, borderBottomWidth: 2 },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  { color: activeTab === tab.feedType ? c.primary : c.mutedForeground },
+                  activeTab === tab.feedType && { fontWeight: '700' },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      </SafeAreaView>
+    </BlurView>
+    </View>
+  );
+
+  const renderScrollableHeader = () => (
+    <View>
       {/* Search Bar */}
-      <View style={[styles.searchRow, { borderBottomColor: c.border }]}>
+      <View style={[styles.searchRow, { borderBottomColor: c.border, backgroundColor: c.background }]}>
         <View style={[styles.searchBox, { backgroundColor: c.muted }]}>
           <Ionicons name="search" size={18} color={c.mutedForeground} />
           <TextInput
@@ -112,16 +303,20 @@ export default function HomeScreen() {
       </View>
 
       {/* Create Post Strip + Raise Issue */}
-      <View style={[styles.createRow, { borderBottomColor: c.border }]}>
+      <View style={[styles.createRow, { borderBottomColor: c.border, backgroundColor: c.background }]}>
         <TouchableOpacity
           style={[styles.createStrip, { flex: 1 }]}
-          onPress={() => router.push('/(tabs)/create')}
+          onPress={() => router.push('/post/create' as any)}
         >
-          <View style={[styles.avatar, { backgroundColor: c.muted }]}>
-            <Text style={{ fontSize: 16 }}>
-              {profile?.full_name?.charAt(0) || 'U'}
-            </Text>
-          </View>
+          {profile?.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: c.muted }]}>
+              <Text style={{ fontSize: 16 }}>
+                {profile?.full_name?.charAt(0) || 'U'}
+              </Text>
+            </View>
+          )}
           <View style={[styles.createInput, { backgroundColor: c.muted }]}>
             <Text style={{ color: c.mutedForeground, fontSize: 16 }}>
               What's on your mind?
@@ -136,91 +331,25 @@ export default function HomeScreen() {
           <Text style={styles.raiseIssueBtnText}>Raise Issue</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Feed Tabs */}
-      <View style={[styles.tabRow, { backgroundColor: c.background, borderBottomColor: c.border }]}>
-        {FEED_TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.feedType}
-            onPress={() => setActiveTab(tab.feedType)}
-            style={[
-              styles.tab,
-              activeTab === tab.feedType && { borderBottomColor: c.primary, borderBottomWidth: 2 },
-            ]}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                { color: activeTab === tab.feedType ? c.primary : c.mutedForeground },
-                activeTab === tab.feedType && { fontWeight: '700' },
-              ]}
-            >
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
     </View>
   );
 
-  const ISSUE_CATEGORIES = [
-    { label: 'Infrastructure', value: 'infrastructure', icon: '🏗️' },
-    { label: 'Education', value: 'education', icon: '📚' },
-    { label: 'Health', value: 'health', icon: '🏥' },
-    { label: 'Environment', value: 'environment', icon: '🌿' },
-    { label: 'Governance', value: 'governance', icon: '🏛️' },
-    { label: 'Safety', value: 'safety', icon: '🛡️' },
-    { label: 'Other', value: 'other', icon: '💬' },
-  ];
-
-  const URGENCY_LEVELS = [
-    { label: 'Low', value: 'low', color: '#22c55e' },
-    { label: 'Medium', value: 'medium', color: '#eab308' },
-    { label: 'High', value: 'high', color: '#f97316' },
-    { label: 'Critical', value: 'critical', color: '#ef4444' },
-  ];
-
-  const handleSubmitIssue = async () => {
-    if (!issueTitle.trim() || !issueContent.trim()) {
-      Alert.alert('Error', 'Please fill in the title and description');
-      return;
-    }
-    if (!user) return;
-
-    setIsSubmittingIssue(true);
-    const { error } = await supabase.from('posts').insert({
-      author_id: user.id,
-      title: issueTitle.trim(),
-      content: issueContent.trim(),
-      category: issueCategory,
-      urgency: issueUrgency,
-      district: profile?.district || null,
-    });
-    setIsSubmittingIssue(false);
-
-    if (error) {
-      Alert.alert('Error', 'Failed to submit issue. Please try again.');
-    } else {
-      setIssueTitle('');
-      setIssueContent('');
-      setIssueCategory('other');
-      setIssueUrgency('medium');
-      setRaiseIssueVisible(false);
-      Alert.alert('Success', 'Your issue has been raised! 📢');
-      // Refresh feed
-      feed.refresh();
-    }
-  };
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
+      {/* Fixed Sticky Header — rendered as JSX, not as a component */}
+      {renderStickyHeader()}
+
+      {/* Feed Content */}
       {feed.loading ? (
         <FlatList
+          key="skeleton"
           data={[1, 2, 3]}
           keyExtractor={(i) => String(i)}
           renderItem={() => <SkeletonCard />}
           scrollEnabled={false}
-          ListHeaderComponent={renderHeader}
+          ListHeaderComponent={renderScrollableHeader}
+          style={styles.feedList}
+          contentContainerStyle={styles.feedContent}
         />
       ) : feed.error ? (
         <View style={styles.center}>
@@ -231,11 +360,20 @@ export default function HomeScreen() {
           </Text>
         </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
+          key="feed"
+          ref={flatListRef}
           data={feed.posts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <PostCard post={item} />}
-          ListHeaderComponent={renderHeader}
+          keyExtractor={(item: any) => item.id}
+          renderItem={({ item }: { item: any }) => <PostCard post={item} />}
+          ListHeaderComponent={renderScrollableHeader}
+          style={styles.feedList}
+          contentContainerStyle={styles.feedContent}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={feed.refreshing}
@@ -246,7 +384,6 @@ export default function HomeScreen() {
           onEndReached={feed.loadMore}
           onEndReachedThreshold={0.4}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 110 }}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
           ListFooterComponent={
@@ -266,10 +403,16 @@ export default function HomeScreen() {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={{ fontSize: 48, marginBottom: 12 }}>📢</Text>
-              <Text style={[styles.emptyTitle, { color: c.foreground }]}>No posts yet</Text>
+              <Image 
+                source={require('../../assets/images/ghost.png')} 
+                style={styles.emptyGhost} 
+                resizeMode="contain" 
+              />
+              <Text style={[styles.emptyTitle, { color: c.foreground }]}>
+                {searchQuery ? 'No results found' : 'No posts yet'}
+              </Text>
               <Text style={[styles.emptyText, { color: c.mutedForeground }]}>
-                Be the first to raise your voice!
+                {searchQuery ? 'Try searching something else' : 'Be the first to raise your voice!'}
               </Text>
             </View>
           }
@@ -286,7 +429,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <Text style={[styles.modalTitle, { color: c.foreground }]}>Raise an Issue</Text>
             <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: c.primary, opacity: isSubmittingIssue ? 0.5 : 1 }]}
+              style={[styles.submitBtn, { backgroundColor: '#22c55e', opacity: isSubmittingIssue ? 0.6 : 1 }]}
               onPress={handleSubmitIssue}
               disabled={isSubmittingIssue}
             >
@@ -322,6 +465,30 @@ export default function HomeScreen() {
               numberOfLines={5}
               textAlignVertical="top"
             />
+
+            {/* Image Upload */}
+            <Text style={[styles.fieldLabel, { color: c.foreground }]}>Add Photo</Text>
+            {issueImageUri ? (
+              <View style={styles.issueImagePreview}>
+                <Image source={{ uri: issueImageUri }} style={styles.issueImage} />
+                <TouchableOpacity
+                  style={styles.removeImageBtn}
+                  onPress={() => setIssueImageUri(null)}
+                >
+                  <Ionicons name="close-circle" size={28} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.addPhotoBtn, { backgroundColor: c.muted, borderColor: c.border }]}
+                onPress={pickIssueImage}
+              >
+                <Ionicons name="camera-outline" size={24} color={c.mutedForeground} />
+                <Text style={{ color: c.mutedForeground, fontSize: 14, marginTop: 4 }}>
+                  Tap to add a photo
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Category */}
             <Text style={[styles.fieldLabel, { color: c.foreground }]}>Category</Text>
@@ -380,13 +547,35 @@ export default function HomeScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  stickyHeaderContainer: {
+    zIndex: 100,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 8,
+    backgroundColor: 'transparent',
+  },
+  stickyHeader: {
+    overflow: 'hidden',
+    borderBottomWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+  },
+  feedList: {
+    flex: 1,
+  },
+  feedContent: {
+    paddingBottom: 16,
   },
   center: {
     flex: 1,
@@ -400,12 +589,12 @@ const styles = StyleSheet.create({
   endOfFeedText: {
     fontSize: 13,
   },
-  header: {
+  topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 0.5,
   },
   logo: {
@@ -428,6 +617,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  tabRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   searchRow: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -436,15 +638,15 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 40,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    height: 44,
+    borderRadius: 22,
+    paddingHorizontal: 16,
     gap: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    height: 40,
+    fontSize: 16,
+    height: 44,
   },
   createRow: {
     flexDirection: 'row',
@@ -466,6 +668,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
   createInput: {
     flex: 1,
     paddingHorizontal: 16,
@@ -485,22 +692,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  tabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   empty: {
     alignItems: 'center',
     paddingTop: 80,
+  },
+  emptyGhost: {
+    width: 160,
+    height: 160,
+    marginBottom: 20,
+    opacity: 0.8,
   },
   emptyTitle: {
     fontSize: 18,
@@ -510,7 +710,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
   },
-  // ── Raise Issue Modal ──
+  // Raise Issue Modal
   modalContainer: {
     flex: 1,
   },
@@ -559,6 +759,33 @@ const styles = StyleSheet.create({
   fieldTextArea: {
     minHeight: 120,
     textAlignVertical: 'top',
+  },
+  // Image upload for issue
+  issueImagePreview: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 4,
+  },
+  issueImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 14,
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 14,
+  },
+  addPhotoBtn: {
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    paddingVertical: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
   chipRow: {
     flexDirection: 'row',

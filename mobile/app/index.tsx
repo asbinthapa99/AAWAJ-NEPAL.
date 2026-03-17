@@ -1,12 +1,10 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Dimensions, Animated, PanResponder } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/providers/AuthProvider';
-import AnimatedBackground from '../src/components/AnimatedBackground';
-import { Feather } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 
-const { height } = Dimensions.get('window');
-const SWIPE_THRESHOLD = -height * 0.2; // swipe up 20% of screen to unlock
+const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const { user, loading } = useAuth();
@@ -19,147 +17,157 @@ export default function WelcomeScreen() {
     }
   }, [user, loading]);
 
-  const translateY = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
-
   const navigateToLogin = () => {
-    router.replace('/auth/login');
+    router.replace('/onboarding/get-started');
   };
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only capture vertical swipes (upwards)
-        return Math.abs(gestureState.dy) > 10 && gestureState.dy < 0;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy < 0) {
-          translateY.setValue(gestureState.dy);
-          opacity.setValue(1 + (gestureState.dy / (height * 0.4)));
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy < SWIPE_THRESHOLD || gestureState.vy < -1.5) {
-          // Unlock threshold met, slide the rest of the way up and navigate
-          Animated.parallel([
-            Animated.timing(translateY, {
-              toValue: -height,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            })
-          ]).start(() => {
-            navigateToLogin();
-          });
-        } else {
-          // Spring back down
-          Animated.parallel([
-            Animated.spring(translateY, {
-              toValue: 0,
-              bounciness: 12,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacity, {
-              toValue: 1,
-              duration: 200,
-              useNativeDriver: true,
-            })
-          ]).start();
-        }
-      },
-    })
-  ).current;
 
   if (loading || user) return null; // Let the redirect or auth state settle
 
   return (
-    <View style={{ flex: 1 }}>
-      <AnimatedBackground />
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      
+      {/* Top Navigation Bar */}
+      <View style={styles.topNav}>
+        <View style={styles.progressContainer}>
+          <View style={[styles.progressSegment, styles.progressActive]} />
+          <View style={styles.progressSegment} />
+          <View style={styles.progressSegment} />
+        </View>
+        <TouchableOpacity onPress={navigateToLogin} style={styles.skipButton}>
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
+      </View>
 
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          styles.container,
-          {
-            transform: [{ translateY }],
-            opacity
-          }
-        ]}
-      >
-        <View style={styles.topSection}>
-          {/* Top section left empty to remove time/date per request */}
+      {/* Hero Content Area */}
+      <View style={styles.contentArea}>
+        {/* Background gradient handled in styling via backgroundColor container */}
+        
+        {/* Hero Image */}
+        <View style={styles.imageContainer}>
+          {/* Use the dynamically created image or fallback if not ready */}
+          <Image 
+            source={require('../assets/images/welcome-hero.png')} 
+            style={styles.heroImage} 
+            resizeMode="contain" 
+          />
         </View>
 
-        <View style={styles.middleSection}>
-          <Text style={styles.title}>welcome to guffaff</Text>
+        {/* Text Content */}
+        <View style={styles.textContainer}>
+          <Text style={styles.title}>
+            Connect with family{'\n'}on Awaaz Nepal
+          </Text>
+          <Text style={styles.subtitle}>
+            Share your updates and create new{'\n'}moments with your Family
+          </Text>
         </View>
 
-        <View style={styles.bottomSection}>
-          <View style={styles.swipeIconBox}>
-            <Feather name="chevron-up" size={32} color="#ffffff" style={{ opacity: 0.5 }} />
-            <Feather name="chevron-up" size={32} color="#ffffff" style={{ marginTop: -20, opacity: 0.8 }} />
-            <Feather name="chevron-up" size={32} color="#ffffff" style={{ marginTop: -20 }} />
-          </View>
-          <Text style={styles.swipeText}>swipe hightech up to get started</Text>
-        </View>
-      </Animated.View >
-    </View >
+        {/* Action Button */}
+        <TouchableOpacity 
+          style={styles.continueButton} 
+          onPress={navigateToLogin}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
-    paddingVertical: 60,
+    backgroundColor: '#F0F5FA', // Light greyish-blue background from screenshot
   },
-  topSection: {
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40, // Avoid safe area notch
+    width: '100%',
+    zIndex: 10,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    flex: 1,
+  },
+  progressSegment: {
+    height: 4,
+    flex: 1,
+    maxWidth: 60,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 2,
+  },
+  progressActive: {
+    backgroundColor: '#000000',
+  },
+  skipButton: {
+    paddingLeft: 16,
+    paddingVertical: 8,
+  },
+  skipText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  contentArea: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+  },
+  imageContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
     marginTop: 20,
+    maxHeight: height * 0.55,
   },
-  timeText: {
-    fontSize: 72,
-    fontWeight: '300',
-    color: '#ffffff',
-    letterSpacing: -2,
-    marginBottom: 4,
+  heroImage: {
+    width: width * 0.9,
+    height: '100%',
   },
-  dateText: {
-    fontSize: 20,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.8)',
-  },
-  middleSection: {
+  textContainer: {
     alignItems: 'center',
+    paddingHorizontal: 10,
+    marginBottom: 40,
   },
   title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000000',
+    textAlign: 'center',
     letterSpacing: -0.5,
-    marginBottom: 12,
+    marginBottom: 16,
+    lineHeight: 36,
   },
   subtitle: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.8)',
+    fontSize: 15,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 10,
   },
-  bottomSection: {
+  continueButton: {
+    backgroundColor: '#000000',
+    width: '100%',
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  swipeIconBox: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  swipeText: {
-    fontSize: 16,
-    fontWeight: '600',
+  continueButtonText: {
     color: '#ffffff',
-    letterSpacing: 0.5,
+    fontSize: 17,
+    fontWeight: '600',
   },
 });

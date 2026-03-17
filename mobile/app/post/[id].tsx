@@ -198,6 +198,16 @@ export default function PostDetailScreen() {
     };
     if (replyingTo) payload.reply_to_id = replyingTo.id;
 
+    // Ensure user has a profile record before inserting comment (fixes FK constraint error for old users)
+    const { data: hasProfile } = await supabase.from('profiles').select('id').eq('id', user.id).single();
+    if (!hasProfile) {
+      await supabase.from('profiles').insert({
+        id: user.id,
+        full_name: user.email?.split('@')[0] || 'User',
+        username: user.email?.split('@')[0]?.toLowerCase() || `user_${Date.now().toString().slice(-6)}`
+      }).select().single();
+    }
+
     const { error } = await supabase.from('comments').insert(payload);
 
     if (error) {

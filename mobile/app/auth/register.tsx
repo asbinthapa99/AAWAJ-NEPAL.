@@ -25,7 +25,6 @@ export default function RegisterScreen() {
   const router = useRouter();
 
   const [fullName, setFullName] = useState('');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +32,7 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleRegister = async () => {
-    if (!fullName.trim() || !username.trim() || !email.trim() || !password) {
+    if (!fullName.trim() || !email.trim() || !password) {
       setError('Please fill in all fields');
       return;
     }
@@ -44,11 +43,13 @@ export default function RegisterScreen() {
     setLoading(true);
     setError(null);
 
-    const { error: err } = await signUp(email.trim(), password, fullName.trim(), username.trim());
-    if (err) {
-      setError(err);
-      setLoading(false);
+    // Auto-generate username from email
+    const autoUsername = email.trim().split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+    const result = await signUp(email.trim(), password, fullName.trim(), autoUsername);
+    if (result.error) {
+      setError(result.error);
     }
+    setLoading(false);
   };
 
   return (
@@ -96,19 +97,6 @@ export default function RegisterScreen() {
                   placeholderTextColor="#9ca3af"
                   value={fullName}
                   onChangeText={setFullName}
-                />
-              </View>
-
-              <Text style={styles.label}>Username</Text>
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="rambahadur"
-                  placeholderTextColor="#9ca3af"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={username}
-                  onChangeText={setUsername}
                 />
               </View>
 

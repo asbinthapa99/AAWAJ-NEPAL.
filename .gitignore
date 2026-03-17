@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# SQL database / migrations (contains schema secrets)
+supabase/
+*.sql
+
+# Mobile app
+mobile/node_modules/
+mobile/.expo/
+mobile/.vscode/
+mobile/dist/
+mobile/web-build/
+
+# OS files (recursive)
+**/.DS_Store

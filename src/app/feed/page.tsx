@@ -21,6 +21,7 @@ export default function FeedPage() {
   const [sort, setSort] = useState<SortMode>('latest');
   const [hasMore, setHasMore] = useState(true);
   const [fetchError, setFetchError] = useState('');
+  const [isFetching, setIsFetching] = useState(false);
 
   const insertBufferRef = useRef<Post[]>([]);
   const insertTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,7 +49,10 @@ export default function FeedPage() {
   };
 
   const fetchPosts = async (isLoadMore = false) => {
+    if (isFetching) return;
+
     try {
+      setIsFetching(true);
       if (!isLoadMore) setLoading(true);
       else setLoadingMore(true);
       setFetchError('');
@@ -93,6 +97,7 @@ export default function FeedPage() {
       setFetchError('Error loading posts: ' + (err instanceof Error ? err.message : String(err)));
       setHasMore(false);
     } finally {
+      setIsFetching(false);
       setLoading(false);
       setLoadingMore(false);
     }

@@ -55,12 +55,16 @@ export default function PostCard({ post, onDeleted }: PostCardProps) {
     if (!showMenu) return;
     const closeMenu = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node) &&
-          menuBtnRef.current && !menuBtnRef.current.contains(event.target as Node)) {
+        menuBtnRef.current && !menuBtnRef.current.contains(event.target as Node)) {
         setShowMenu(false);
       }
     };
     document.addEventListener('mousedown', closeMenu);
-    return () => document.removeEventListener('mousedown', closeMenu);
+
+    // Always return cleanup correctly
+    return () => {
+      document.removeEventListener('mousedown', closeMenu);
+    };
   }, [showMenu]);
 
   const toggleMenu = () => {

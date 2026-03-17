@@ -12,10 +12,12 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, Layout, Easing } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { useAuth } from '../../src/providers/AuthProvider';
+import AnimatedPressable from '../../src/components/AnimatedPressable';
 import { supabase } from '../../src/lib/supabase';
 import type { Message } from '../../src/lib/types';
 
@@ -34,8 +36,14 @@ const MessageBubble = memo(function MessageBubble({
 }) {
   const time = new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const isLatest = true; // For now assuming all new messages animate (in real app, check index)
+
   return (
-    <View style={[styles.msgRow, isOwn ? styles.msgRight : styles.msgLeft]}>
+    <Animated.View
+      entering={FadeInUp.duration(300).easing(Easing.out(Easing.quad))}
+      layout={Layout.springify().damping(18).stiffness(200)}
+      style={[styles.msgRow, isOwn ? styles.msgRight : styles.msgLeft]}
+    >
       <Text style={[styles.msgText, { color: isOwn ? '#fff' : foreground }]}>{item.content}</Text>
       <View style={styles.msgMeta}>
         <Text style={[styles.msgTime, { color: isOwn ? 'rgba(255,255,255,0.7)' : '#9ca3af' }]}>{time}</Text>
@@ -43,7 +51,7 @@ const MessageBubble = memo(function MessageBubble({
           <Ionicons name="checkmark-done" size={14} color="rgba(255,255,255,0.7)" style={{ marginLeft: 4 }} />
         )}
       </View>
-    </View>
+    </Animated.View>
   );
 });
 
@@ -367,13 +375,13 @@ export default function ChatScreen() {
             multiline
             maxLength={2000}
           />
-          <TouchableOpacity
+          <AnimatedPressable
             onPress={sendMessage}
             style={[styles.sendBtn, !text.trim() && styles.sendBtnDisabled]}
             disabled={!text.trim()}
           >
             <Ionicons name="send" size={18} color="#fff" />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

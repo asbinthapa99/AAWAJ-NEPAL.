@@ -107,7 +107,7 @@ export default function NotificationsScreen() {
       .then(() => {});
 
     if (item.type === 'follow') {
-      router.push(`/profile/${item.from_user_id}` as any);
+      router.push(`/u/${item.from_user_id}` as any);
     } else if (item.entity_id) {
       router.push(`/post/${item.entity_id}` as any);
     }
