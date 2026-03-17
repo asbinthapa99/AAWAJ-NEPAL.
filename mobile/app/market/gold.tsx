@@ -14,7 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { FINNHUB_API_KEY } from '../../src/utils/constants';
+import { GlassSkeleton } from '../../src/components/GlassSkeleton';
 
+const LineChart = lazy(() =>
+  import('react-native-chart-kit').then((m) => ({ default: m.LineChart }))
+);
 
 const { width } = Dimensions.get('window');
 
@@ -220,9 +224,23 @@ export default function GoldSilverScreen() {
       >
         {/* ── Loading state ── */}
         {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#EAB308" />
-            <Text style={[styles.loadingText, { color: c.mutedForeground }]}>Fetching live prices…</Text>
+          <View style={{ gap: 16 }}>
+            {[1, 2].map((i) => (
+              <View key={`skel-${i}`} style={[styles.mainCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+                <View style={[styles.cardHeader, { marginBottom: 16 }]}>
+                  <GlassSkeleton width={48} height={48} borderRadius={24} />
+                  <View style={{ flex: 1, marginLeft: 12, gap: 8 }}>
+                    <GlassSkeleton width={120} height={16} borderRadius={8} />
+                    <GlassSkeleton width={80} height={12} borderRadius={6} />
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 8 }}>
+                    <GlassSkeleton width={100} height={24} borderRadius={8} />
+                    <GlassSkeleton width={60} height={20} borderRadius={10} />
+                  </View>
+                </View>
+                <GlassSkeleton width="100%" height={160} borderRadius={16} />
+              </View>
+            ))}
           </View>
         )}
 
@@ -262,8 +280,41 @@ export default function GoldSilverScreen() {
                 </View>
               </View>
 
-              {/* Chart Placeholder */}
-              <View style={{ height: 80 }} />
+              {/* Chart */}
+              <Suspense
+                fallback={
+                  <View style={styles.chartPlaceholder}>
+                    <GlassSkeleton width="100%" height={160} borderRadius={16} />
+                  </View>
+                }
+              >
+                <LineChart
+                  data={{
+                    labels: chartData.map((_, i) => (i === 0 ? 'Open' : i === chartData.length - 1 ? 'Now' : '')),
+                    datasets: [{ data: chartData }],
+                  }}
+                  width={width - 64}
+                  height={160}
+                  withDots={false}
+                  withInnerLines={false}
+                  withOuterLines={false}
+                  withVerticalLines={false}
+                  withHorizontalLines={false}
+                  withVerticalLabels={false}
+                  yAxisInterval={1}
+                  chartConfig={{
+                    backgroundColor: cardBg,
+                    backgroundGradientFrom: cardBg,
+                    backgroundGradientTo: cardBg,
+                    decimalPlaces: config.decimalPlaces,
+                    color: (opacity = 1) => `${config.glow}${opacity})`,
+                    labelColor: () => c.mutedForeground,
+                    propsForBackgroundLines: { strokeWidth: 0 },
+                  }}
+                  bezier
+                  style={{ marginVertical: 8, borderRadius: 16, marginLeft: -20 }}
+                />
+              </Suspense>
 
               {/* Stats row */}
               <View style={[styles.statsRow, { backgroundColor: surfaceBg, borderRadius: 12, marginTop: 4 }]}>
