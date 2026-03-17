@@ -15,9 +15,6 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/providers/ThemeProvider';
 import { FINNHUB_API_KEY } from '../../src/utils/constants';
 
-const LineChart = lazy(() =>
-  import('react-native-chart-kit').then((m) => ({ default: m.LineChart }))
-);
 
 const { width } = Dimensions.get('window');
 
@@ -265,41 +262,8 @@ export default function GoldSilverScreen() {
                 </View>
               </View>
 
-              {/* Chart */}
-              <Suspense
-                fallback={
-                  <View style={styles.chartPlaceholder}>
-                    <ActivityIndicator size="small" color={config.color} />
-                  </View>
-                }
-              >
-                <LineChart
-                  data={{
-                    labels: chartData.map((_, i) => (i === 0 ? 'Open' : i === chartData.length - 1 ? 'Now' : '')),
-                    datasets: [{ data: chartData }],
-                  }}
-                  width={width - 64}
-                  height={160}
-                  withDots={false}
-                  withInnerLines={false}
-                  withOuterLines={false}
-                  withVerticalLines={false}
-                  withHorizontalLines={false}
-                  withVerticalLabels={false}
-                  yAxisInterval={1}
-                  chartConfig={{
-                    backgroundColor: cardBg,
-                    backgroundGradientFrom: cardBg,
-                    backgroundGradientTo: cardBg,
-                    decimalPlaces: config.decimalPlaces,
-                    color: (opacity = 1) => `${config.glow}${opacity})`,
-                    labelColor: () => c.mutedForeground,
-                    propsForBackgroundLines: { strokeWidth: 0 },
-                  }}
-                  bezier
-                  style={{ marginVertical: 8, borderRadius: 16, marginLeft: -20 }}
-                />
-              </Suspense>
+              {/* Chart Placeholder */}
+              <View style={{ height: 80 }} />
 
               {/* Stats row */}
               <View style={[styles.statsRow, { backgroundColor: surfaceBg, borderRadius: 12, marginTop: 4 }]}>

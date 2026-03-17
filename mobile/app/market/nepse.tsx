@@ -2,7 +2,6 @@ import React, { Suspense, lazy } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../src/providers/ThemeProvider';
 
-const BarChart = lazy(() => import('react-native-chart-kit').then(module => ({ default: module.BarChart })));
 
 const { width } = Dimensions.get('window');
 
@@ -32,46 +31,8 @@ export default function NEPSEScreen() {
       <View style={[styles.mainCard, { backgroundColor: c.card, borderColor: c.border }]}>
         <Text style={[styles.mainTitle, { color: c.foreground }]}>Weekly Trading Volume</Text>
         
-        <Suspense fallback={<View style={{ height: 220, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="small" color={c.primary} /></View>}>
-          <BarChart
-            data={{
-              labels: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-              datasets: [
-                {
-                  data: [420, 500, 380, 580, 480]
-                }
-              ]
-            }}
-            width={width - 64}
-            height={220}
-            yAxisLabel=""
-            yAxisSuffix=""
-            withInnerLines={false}
-            showBarTops={false}
-            fromZero
-            chartConfig={{
-              backgroundColor: c.card,
-              backgroundGradientFrom: c.card,
-              backgroundGradientTo: c.card,
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(6, 182, 212, ${opacity})`, // Cyan bars
-              labelColor: (opacity = 1) => c.mutedForeground,
-              style: {
-                borderRadius: 16
-              },
-              barPercentage: 0.7,
-              fillShadowGradientFrom: '#06B6D4',
-              fillShadowGradientFromOpacity: 1,
-              fillShadowGradientTo: '#06B6D4',
-              fillShadowGradientToOpacity: 1,
-            }}
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-              marginLeft: -20,
-            }}
-          />
-        </Suspense>
+        {/* Chart Placeholder */}
+        <View style={{ height: 160 }} />
       </View>
 
       <Text style={[styles.sectionTitle, { color: c.mutedForeground }]}>Top Traded</Text>
