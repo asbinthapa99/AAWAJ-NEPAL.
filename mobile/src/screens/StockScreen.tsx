@@ -31,6 +31,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient as ExpoLinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, {
   FadeIn,
@@ -636,7 +637,13 @@ export default function StockScreen() {
         </View>
 
         {/* MAIN CARD */}
-        <View style={[styles.mainCard, { backgroundColor: cardBg, shadowColor: isDark ? '#000' : '#aaa' }]}>
+        <ExpoLinearGradient
+          colors={[accentColor + '80', isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0', 'transparent']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.mainCardGradient}
+        >
+          <View style={[styles.mainCard, { backgroundColor: cardBg, shadowColor: isDark ? '#000' : '#aaa' }]}>
           {/* Stock badge row */}
           <View style={styles.stockBadgeRow}>
             <View style={[styles.logoWrap, { backgroundColor: isDark ? '#1e2538' : '#f5f0e8' }]}>
@@ -756,7 +763,8 @@ export default function StockScreen() {
               </TouchableOpacity>
             ))}
           </View>
-        </View>
+          </View>
+        </ExpoLinearGradient>
 
         {/* STATS GRID */}
         <View style={[styles.statsCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
@@ -1004,8 +1012,9 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700' },
   circleBtn:   { width: 42, height: 42, borderRadius: 21, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 
+  mainCardGradient: { marginHorizontal: 16, marginTop: 8, borderRadius: 28, padding: 1.5 },
   mainCard: {
-    marginHorizontal: 16, marginTop: 8, borderRadius: 28, padding: 20,
+    borderRadius: 26.5, padding: 20, height: '100%',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4,
   },
 
