@@ -41,11 +41,10 @@ import Animated, {
   FadeInDown,
   FadeInUp,
 } from 'react-native-reanimated';
-import { FINNHUB_API_KEY } from '../utils/constants';
+import { supabase } from '../lib/supabase';
 import { useTheme } from '../providers/ThemeProvider';
+import { GlassSkeleton } from '../components/GlassSkeleton';
 import MarketStatusBadge from '../components/MarketStatusBadge';
-import { useStocks, useConnectionStatus } from '../state/selectors';
-import { wsService } from '../api/websocketService';
 
 // ── All Popular Stocks ───────────────────────────────────────────────────────
 
@@ -92,16 +91,6 @@ const NEWS_ITEMS = [
 
 const RANGES = ['1D', '1W', '1M', '3M', '1Y'] as const;
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface FinnhubQuoteResponse {
-  c: number; d: number; dp: number; h: number; l: number; o: number; pc: number;
-}
-
-interface FinnhubCandleResponse {
-  c?: number[]; h?: number[]; l?: number[]; o?: number[]; s?: string; t?: number[]; v?: number[];
-}
-
 interface StockQuote {
   symbol: string;
   name: string;
@@ -113,6 +102,10 @@ interface StockQuote {
   low: number;
   open: number;
   previousClose: number;
+  volume: number;
+  last_trade_time: string;
+  updated_at: string;
+  // UI helpers
   up: boolean;
   logoUrl: string;
   domain: string;
@@ -165,15 +158,6 @@ function buildSvgPath(points: number[], width: number, height: number) {
   return { linePath, areaPath };
 }
 
-async function fetchQuote(symbol: string): Promise<FinnhubQuoteResponse> {
-  const res = await fetch(
-    `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_API_KEY}`
-  );
-  if (!res.ok) return { c: 0, d: 0, dp: 0, h: 0, l: 0, o: 0, pc: 0 };
-  return res.json() as Promise<FinnhubQuoteResponse>;
-}
-
-// ── Synthetic Chart Generator (Free Tier Fallback) ───────────────────────────
 // Generates distinct chart shapes per timeframe.
 // Uses a seeded pseudo-random so each stock gets a consistent-looking pattern.
 function seededRandom(seed: number) {
@@ -287,60 +271,6 @@ const CHART_HEIGHT = 180;
 
 // ── Batch fetch helper (avoids Finnhub rate limit by staggering) ─────────────
 
-async function fetchAllQuotes(
-  stocks: typeof ALL_STOCKS,
-  onBatchLoaded?: (quotes: StockQuote[]) => void,
-): Promise<StockQuote[]> {
-  const results: StockQuote[] = [];
-  // Finnhub free-tier: ~30 req/min practical limit → batch of 2 with 2s gap
-  const batchSize = 2;
-  for (let i = 0; i < stocks.length; i += batchSize) {
-    const batch = stocks.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map(async (item) => {
-        const logoUrl = `https://icon.horse/icon/${item.domain}`;
-
-        try {
-          const q = await fetchQuote(item.symbol);
-          return {
-            ...item,
-            price: q.c,
-            changeValue: q.d,
-            changePercent: q.dp,
-            high: q.h,
-            low: q.l,
-            open: q.o,
-            previousClose: q.pc,
-            up: Number(q.d) >= 0,
-            logoUrl,
-          } as StockQuote;
-        } catch {
-          return {
-            ...item,
-            price: 0,
-            changeValue: 0,
-            changePercent: 0,
-            high: 0,
-            low: 0,
-            open: 0,
-            previousClose: 0,
-            up: true,
-            logoUrl,
-          } as StockQuote;
-        }
-      })
-    );
-    results.push(...batchResults);
-    // Notify caller so UI updates progressively as data arrives
-    onBatchLoaded?.(results);
-    // 2-second delay between batches to stay well under Finnhub rate limit
-    if (i + batchSize < stocks.length) {
-      await new Promise((r) => setTimeout(r, 2000));
-    }
-  }
-  return results;
-}
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function StockScreen() {
@@ -361,45 +291,40 @@ export default function StockScreen() {
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  // ── Live WebSocket Data ──
-  const liveStocks = useStocks();
-  const connectionStatus = useConnectionStatus();
+  // ── Data Transformation ──
 
-  // ── Merged Data ──
-  // Merge REST API metadata (like logos) with LIVE WebSocket prices.
-  const mergedWatchlist = useMemo(() => {
-    return ALL_STOCKS.map((stockBase) => {
-      const live = liveStocks[stockBase.symbol];
-      const rest = quoteMap[stockBase.symbol];
-      
-      const price = live?.price ?? rest?.price ?? 0;
-      const changeValue = live?.change ?? rest?.changeValue ?? 0;
-      const changePercent = live?.changePercent ?? rest?.changePercent ?? 0;
-      const high = live?.high ?? rest?.high ?? 0;
-      const low = live?.low ?? rest?.low ?? 0;
-      // In dev mode, REST data is not available, so derive open from prevClose or price
-      const open = rest?.open || live?.prevClose || (price * (1 - (changePercent / 100))) || price;
-      const previousClose = live?.prevClose ?? rest?.previousClose ?? 0;
-      const up = changeValue >= 0;
-      
+  const watchlistArray = useMemo(() => {
+    return ALL_STOCKS.map((base) => {
+      const dbStock = quoteMap[base.symbol];
+      if (dbStock) {
+        return {
+          ...base,
+          ...dbStock,
+          up: Number(dbStock.changeValue) >= 0,
+          logoUrl: `https://icon.horse/icon/${base.domain}`
+        } as StockQuote;
+      }
       return {
-        ...stockBase,
-        price,
-        changeValue,
-        changePercent,
-        high,
-        low,
-        open,
-        previousClose,
-        up,
-        logoUrl: rest?.logoUrl ?? `https://icon.horse/icon/${stockBase.domain}`,
-      };
+        ...base,
+        price: 0,
+        changeValue: 0,
+        changePercent: 0,
+        high: 0,
+        low: 0,
+        open: 0,
+        previousClose: 0,
+        volume: 0,
+        last_trade_time: '',
+        updated_at: '',
+        up: true,
+        logoUrl: `https://icon.horse/icon/${base.domain}`
+      } as StockQuote;
     });
-  }, [liveStocks, quoteMap]);
+  }, [quoteMap]);
 
   const activeStock = useMemo(
-    () => mergedWatchlist.find((s) => s.symbol === selectedStock) ?? mergedWatchlist[0] ?? null,
-    [mergedWatchlist, selectedStock]
+    () => watchlistArray.find((s) => s.symbol === selectedStock) ?? watchlistArray[0] ?? null,
+    [watchlistArray, selectedStock]
   );
 
   const { linePath, areaPath } = useMemo(
@@ -407,12 +332,12 @@ export default function StockScreen() {
     [chartPoints]
   );
 
-  const activeQuote = quoteMap[selectedStock] ?? activeStock;
+  const activeQuote = activeStock;
   const activeIsUp = Number(activeQuote?.changeValue ?? 0) >= 0;
   const accentColor = activeIsUp ? '#10B981' : '#EF4444';
 
   const filteredWatchlist = useMemo(() => {
-    let list = mergedWatchlist;
+    let list = watchlistArray;
     if (showStarredOnly) {
       list = list.filter((s) => starred.has(s.symbol));
     }
@@ -423,35 +348,50 @@ export default function StockScreen() {
       );
     }
     return list;
-  }, [mergedWatchlist, searchQuery, showStarredOnly, starred]);
+  }, [watchlistArray, searchQuery, showStarredOnly, starred]);
 
-  // ── Load all stock quotes (Background Metadata Sync) ──────────────────────────────────────────────────
+  // ── Database Fetching & Realtime Sync ──
 
   const loadQuotes = useCallback(async () => {
     try {
-      // Progressively load quotes — update UI after each batch of 2
-      await fetchAllQuotes(ALL_STOCKS, (progressiveResults) => {
+      const { data, error } = await supabase.from('live_stocks').select('*');
+      if (error) throw error;
+      if (data) {
         setQuoteMap(
-          progressiveResults.reduce(
-            (acc, s) => ({ ...acc, [s.symbol]: s }),
-            {} as Record<string, StockQuote>
-          )
+          data.reduce((acc, row) => ({ ...acc, [row.symbol]: row }), {} as Record<string, StockQuote>)
         );
-      });
+      }
     } catch (e) {
-      console.error('Failed to load watchlist quotes', e);
+      console.error('Failed to load watchlist quotes from Supabase', e);
     }
   }, []);
 
   useEffect(() => {
-    // 1. Subscribe to WS Live Data for all stocks
-    if (connectionStatus === 'connected') {
-      wsService.subscribe(ALL_STOCKS.map(s => s.symbol));
-    }
-
-    // 2. Load REST API metadata (logos, open/high/low) in the background
+    // Initial fetch instantly paints the UI with latest Supabase data
     loadQuotes();
-  }, [loadQuotes, connectionStatus]);
+
+    // Subscribe to any changes on the live_stocks table
+    const channel = supabase.channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'live_stocks' },
+        (payload) => {
+          const updatedStock = payload.new as StockQuote;
+          setQuoteMap((prev) => ({
+            ...prev,
+            [updatedStock.symbol]: {
+              ...(prev[updatedStock.symbol] || {}),
+              ...updatedStock
+            }
+          }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadQuotes]);
 
   // ── Pull-to-refresh ────────────────────────────────────────────────────────
 
@@ -835,8 +775,8 @@ export default function StockScreen() {
             </View>
           ) : (
             filteredWatchlist.map((item) => {
-              const itemUp     = Number(item.changeValue ?? 0) >= 0;
               const isSelected = selectedStock === item.symbol;
+              const itemUp     = Number(item.changeValue ?? 0) >= 0;
               const isStarred  = starred.has(item.symbol);
               const sparkPts   = generateSyntheticChart(item as any, '1D').filter((_, i) => i % 4 === 0);
               const { linePath: sLine } = buildSvgPath(sparkPts, 48, 24);
